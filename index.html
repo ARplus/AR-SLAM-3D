@@ -5,268 +5,88 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
+    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind; showStats: true;" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="video" autoplay loop muted playsinline src="./video.mp4" crossorigin="anonymous"></video>
-        <canvas id="chromaCanvas" width="512" height="512"></canvas>
+        <!-- 3D模型资源 -->
+        <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/softmind/scene.gltf"></a-asset-item>
+        
+        <!-- 备用模型资源 -->
+        <a-asset-item id="avatarModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/softmind/scene.gltf"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane src="#chromaCanvas" width="1" height="1" position="0 0 0.01"
-                 material="transparent: true; alphaTest: 0.1"></a-plane>
+        <!-- 主要3D模型 - 悬浮在识别图上方 -->
+        <a-gltf-model 
+          id="mainModel"
+          rotation="0 0 0" 
+          position="0 0 0.3" 
+          scale="0.008 0.008 0.008" 
+          src="#buddhaModel" 
+          animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
+        </a-gltf-model>
+        
+        <!-- 辅助光效 -->
+        <a-light type="point" position="0 2 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
+        
+        <!-- 可选：添加粒子效果或环境装饰 -->
+        <a-ring 
+          position="0 -0.1 0" 
+          rotation="-90 0 0" 
+          radius-inner="0.3" 
+          radius-outer="0.5" 
+          color="#ffd700" 
+          opacity="0.3"
+          animation="property: rotation; to: -90 360 0; dur: 10000; easing: linear; loop: true">
+        </a-ring>
+        
+        <!-- 发光效果圆盘 -->
+        <a-circle 
+          position="0 -0.05 0" 
+          rotation="-90 0 0" 
+          radius="0.4" 
+          color="#ffeb3b" 
+          opacity="0.2"
+          animation="property: scale; to: 1.2 1.2 1.2; dur: 1500; easing: easeInOutQuad; loop: true; dir: alternate">
+        </a-circle>
       </a-entity>
       
     </a-scene>
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        const video = document.querySelector('#video');
-        const canvas = document.querySelector('#chromaCanvas');
-        const ctx = canvas.getContext('2d');
-        let plane;
-        let canvasTexture;
+        console.log('AR 3D模型场景已加载');
         
-        const chromaKey = {
-          threshold: 60,
-          smoothing: 20
-        };
+        // 监听模型加载状态
+        const model = document.querySelector('#mainModel');
         
-        const imageEnhancement = {
-          contrast: 1.3,
-          brightness: 1.1,
-          saturation: 1.2
-        };
-        
-        const stabilizer = {
-          positionHistory: [],
-          maxHistory: 3,        // 减少历史记录，提高响应性
-          smoothFactor: 0.8,    // 提高响应性
-          targetFPS: 60,        // 提高到60FPS
-          lastUpdateTime: 0,
-          updateInterval: 1000 / 60,  // 约16ms
-          motionThreshold: 15,  // 运动检测阈值
-          isMoving: false       // 运动状态
-        };
-        
-        let previousFrame = null;
-        let frameBuffer = [];
-        const maxFrameBuffer = 2;  // 减少缓冲帧数
-        
-        function smoothPosition(currentPos) {
-          stabilizer.positionHistory.push(currentPos);
-          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
-            stabilizer.positionHistory.shift();
-          }
-          
-          const avgPos = { x: 0, y: 0, z: 0 };
-          stabilizer.positionHistory.forEach(pos => {
-            avgPos.x += pos.x;
-            avgPos.y += pos.y; 
-            avgPos.z += pos.z;
-          });
-          
-          const count = stabilizer.positionHistory.length;
-          return {
-            x: avgPos.x / count,
-            y: avgPos.y / count,
-            z: avgPos.z / count
-          };
-        }
-        
-        function hasSignificantChange(currentData, previousData) {
-          if (!previousData) return true;
-          
-          let totalDiff = 0;
-          const sampleRate = 50; // 更密集的采样
-          let significantPixels = 0;
-          
-          for (let i = 0; i < currentData.length; i += 4 * sampleRate) {
-            const rDiff = Math.abs(currentData[i] - previousData[i]);
-            const gDiff = Math.abs(currentData[i + 1] - previousData[i + 1]);
-            const bDiff = Math.abs(currentData[i + 2] - previousData[i + 2]);
-            const pixelDiff = (rDiff + gDiff + bDiff) / 3;
-            
-            totalDiff += pixelDiff;
-            if (pixelDiff > 20) significantPixels++; // 计算显著变化的像素数
-          }
-          
-          const avgDiff = totalDiff / (currentData.length / 4 / sampleRate);
-          const motionRatio = significantPixels / (currentData.length / 4 / sampleRate);
-          
-          // 检测是否在运动
-          stabilizer.isMoving = avgDiff > stabilizer.motionThreshold || motionRatio > 0.1;
-          
-          // 运动时更敏感，静态时更稳定
-          const threshold = stabilizer.isMoving ? 5 : 15;
-          return avgDiff > threshold;
-        }
-        
-        function setupTexture() {
-          plane = document.querySelector('a-plane');
-          
-          if (plane && plane.getObject3D('mesh')) {
-            canvasTexture = new THREE.CanvasTexture(canvas);
-            canvasTexture.flipY = true;
-            
-            const material = new THREE.MeshBasicMaterial({
-              map: canvasTexture,
-              transparent: true,
-              alphaTest: 0.1
-            });
-            
-            plane.getObject3D('mesh').material = material;
-            console.log('纹理设置完成');
-          }
-        }
-        
-        function enhanceImage(imageData) {
-          const data = imageData.data;
-          const contrast = imageEnhancement.contrast;
-          const brightness = imageEnhancement.brightness;
-          const saturation = imageEnhancement.saturation;
-          
-          for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
-            
-            r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
-            g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
-            b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
-            
-            r *= brightness;
-            g *= brightness;
-            b *= brightness;
-            
-            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-            r = gray + (r - gray) * saturation;
-            g = gray + (g - gray) * saturation;
-            b = gray + (b - gray) * saturation;
-            
-            data[i] = Math.max(0, Math.min(255, r));
-            data[i + 1] = Math.max(0, Math.min(255, g));
-            data[i + 2] = Math.max(0, Math.min(255, b));
-          }
-          
-          return imageData;
-        }
-        
-        function processChromaKey() {
-          const currentTime = performance.now();
-          
-          if (currentTime - stabilizer.lastUpdateTime < stabilizer.updateInterval) {
-            requestAnimationFrame(processChromaKey);
-            return;
-          }
-          
-          if (video.readyState >= video.HAVE_CURRENT_DATA) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            if (!hasSignificantChange(imageData.data, previousFrame)) {
-              requestAnimationFrame(processChromaKey);
-              return;
-            }
-            
-            imageData = enhanceImage(imageData);
-            
-            const data = imageData.data;
-            
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i + 1];
-              const b = data[i + 2];
-              
-              const isGreenDominant = g > r && g > b;
-              const greenStrength = g - Math.max(r, b);
-              const isBrightEnough = g > 120;
-              const colorDistance = Math.sqrt((r-0)*(r-0) + (g-255)*(g-255) + (b-0)*(b-0));
-              
-              if (isGreenDominant && greenStrength > chromaKey.threshold && isBrightEnough && colorDistance < 150) {
-                const intensity = greenStrength / 100;
-                const alpha = Math.max(0, 1 - intensity);
-                data[i + 3] = data[i + 3] * alpha;
-              }
-            }
-            
-            frameBuffer.push(new Uint8ClampedArray(data));
-            if (frameBuffer.length > maxFrameBuffer) {
-              frameBuffer.shift();
-            }
-            
-            if (frameBuffer.length >= 2) {
-              for (let i = 0; i < data.length; i += 4) {
-                let avgR = 0, avgG = 0, avgB = 0, avgA = 0;
-                
-                frameBuffer.forEach(frame => {
-                  avgR += frame[i];
-                  avgG += frame[i + 1];
-                  avgB += frame[i + 2];
-                  avgA += frame[i + 3];
-                });
-                
-                const count = frameBuffer.length;
-                data[i] = Math.round(avgR / count);
-                data[i + 1] = Math.round(avgG / count);
-                data[i + 2] = Math.round(avgB / count);
-                data[i + 3] = Math.round(avgA / count);
-              }
-            }
-            
-            previousFrame = new Uint8ClampedArray(data);
-            stabilizer.lastUpdateTime = currentTime;
-            
-            ctx.putImageData(imageData, 0, 0);
-            
-            if (canvasTexture) {
-              canvasTexture.needsUpdate = true;
-            }
-          }
-          
-          requestAnimationFrame(processChromaKey);
-        }
-        
-        document.querySelector('a-scene').addEventListener('loaded', function() {
-          setTimeout(setupTexture, 100);
-          
-          const targetEntity = document.querySelector('[mindar-image-target]');
-          if (targetEntity) {
-            let lastPosition = { x: 0, y: 0, z: 0 };
-            
-            setInterval(() => {
-              const currentPosition = targetEntity.getAttribute('position');
-              if (currentPosition) {
-                const smoothedPos = smoothPosition(currentPosition);
-                
-                const positionDiff = Math.sqrt(
-                  Math.pow(smoothedPos.x - lastPosition.x, 2) +
-                  Math.pow(smoothedPos.y - lastPosition.y, 2) +
-                  Math.pow(smoothedPos.z - lastPosition.z, 2)
-                );
-                
-                if (positionDiff > 0.001) {
-                  lastPosition = smoothedPos;
-                }
-              }
-            }, 16);
-          }
+        model.addEventListener('model-loaded', function() {
+          console.log('3D模型加载完成');
         });
         
-        video.addEventListener('loadeddata', function() {
-          console.log('视频加载完成，开始绿幕抠图处理');
-          processChromaKey();
+        model.addEventListener('model-error', function(event) {
+          console.error('3D模型加载失败:', event.detail);
         });
         
-        video.addEventListener('error', function(e) {
-          console.error('视频加载错误:', e);
+        // 添加交互功能（可选）
+        const targetEntity = document.querySelector('[mindar-image-target]');
+        
+        targetEntity.addEventListener('targetFound', function() {
+          console.log('识别目标找到');
+          // 可以添加找到目标时的特效
+        });
+        
+        targetEntity.addEventListener('targetLost', function() {
+          console.log('识别目标丢失');
+          // 可以添加丢失目标时的处理
         });
       });
     </script>
