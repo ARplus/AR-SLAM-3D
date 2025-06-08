@@ -90,19 +90,71 @@
         const startButton = document.getElementById('startButton');
         const scene = document.querySelector('a-scene');
         
+        // 稳定系统参数
+        const stabilizer = {
+          positionHistory: [],
+          rotationHistory: [],
+          maxHistory: 5,
+          smoothFactor: 0.15,  // 更强的平滑
+          threshold: 0.02      // 位置变化阈值
+        };
+        
+        // 位置平滑函数
+        function smoothTransform(currentPos, currentRot) {
+          // 位置平滑
+          stabilizer.positionHistory.push(currentPos);
+          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
+            stabilizer.positionHistory.shift();
+          }
+          
+          // 旋转平滑
+          stabilizer.rotationHistory.push(currentRot);
+          if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
+            stabilizer.rotationHistory.shift();
+          }
+          
+          // 计算平均位置
+          const avgPos = { x: 0, y: 0, z: 0 };
+          stabilizer.positionHistory.forEach(pos => {
+            avgPos.x += pos.x;
+            avgPos.y += pos.y;
+            avgPos.z += pos.z;
+          });
+          
+          const posCount = stabilizer.positionHistory.length;
+          const smoothedPos = {
+            x: avgPos.x / posCount,
+            y: avgPos.y / posCount,
+            z: avgPos.z / posCount
+          };
+          
+          // 计算平均旋转
+          const avgRot = { x: 0, y: 0, z: 0 };
+          stabilizer.rotationHistory.forEach(rot => {
+            avgRot.x += rot.x;
+            avgRot.y += rot.y;
+            avgRot.z += rot.z;
+          });
+          
+          const rotCount = stabilizer.rotationHistory.length;
+          const smoothedRot = {
+            x: avgRot.x / rotCount,
+            y: avgRot.y / rotCount,
+            z: avgRot.z / rotCount
+          };
+          
+          return { position: smoothedPos, rotation: smoothedRot };
+        }
+        
         // 初始隐藏场景
         scene.style.display = 'none';
         
         // 启动按钮点击事件
         startButton.addEventListener('click', async function() {
           try {
-            // 隐藏启动界面
             startScreen.style.display = 'none';
-            
-            // 显示AR场景
             scene.style.display = 'block';
             
-            // 等待场景加载
             await new Promise(resolve => {
               if (scene.hasLoaded) {
                 resolve();
@@ -113,6 +165,9 @@
             
             console.log('AR 3D模型场景已启动');
             
+            // 启动稳定系统
+            setupStabilization();
+            
           } catch (error) {
             console.error('启动AR失败:', error);
             alert('启动AR失败，请检查摄像头权限并刷新页面重试');
@@ -120,6 +175,63 @@
             scene.style.display = 'none';
           }
         });
+        
+        // 设置稳定系统
+        function setupStabilization() {
+          const targetEntity = document.querySelector('[mindar-image-target]');
+          const model = document.querySelector('#mainModel');
+          
+          if (targetEntity && model) {
+            let lastPosition = { x: 0, y: 0, z: 0 };
+            let lastRotation = { x: 0, y: 0, z: 0 };
+            let isTracking = false;
+            
+            // 目标检测事件
+            targetEntity.addEventListener('targetFound', function() {
+              console.log('识别目标找到 - 显示3D模型');
+              isTracking = true;
+              
+              // 重置历史记录，避免突然跳跃
+              stabilizer.positionHistory = [];
+              stabilizer.rotationHistory = [];
+            });
+            
+            targetEntity.addEventListener('targetLost', function() {
+              console.log('识别目标丢失 - 隐藏3D模型');
+              isTracking = false;
+            });
+            
+            // 实时稳定更新
+            setInterval(() => {
+              if (isTracking) {
+                const currentPos = targetEntity.getAttribute('position') || lastPosition;
+                const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
+                
+                // 检查变化是否足够大
+                const positionDiff = Math.sqrt(
+                  Math.pow(currentPos.x - lastPosition.x, 2) +
+                  Math.pow(currentPos.y - lastPosition.y, 2) +
+                  Math.pow(currentPos.z - lastPosition.z, 2)
+                );
+                
+                if (positionDiff > stabilizer.threshold) {
+                  const smoothed = smoothTransform(currentPos, currentRot);
+                  
+                  // 应用平滑后的变换
+                  lastPosition = smoothed.position;
+                  lastRotation = smoothed.rotation;
+                  
+                  // 更新模型位置（保持相对偏移）
+                  model.setAttribute('position', {
+                    x: smoothed.position.x,
+                    y: smoothed.position.y,
+                    z: smoothed.position.z + 0.3  // 保持在识别图上方
+                  });
+                }
+              }
+            }, 16); // 约60fps
+          }
+        }
         
         // 监听模型加载状态
         const model = document.querySelector('#mainModel');
@@ -131,19 +243,6 @@
           
           model.addEventListener('model-error', function(event) {
             console.error('3D模型加载失败:', event.detail);
-          });
-        }
-        
-        // 添加目标识别事件监听
-        const targetEntity = document.querySelector('[mindar-image-target]');
-        
-        if (targetEntity) {
-          targetEntity.addEventListener('targetFound', function() {
-            console.log('识别目标找到 - 显示3D模型');
-          });
-          
-          targetEntity.addEventListener('targetLost', function() {
-            console.log('识别目标丢失 - 隐藏3D模型');
           });
         }
       });
