@@ -5,11 +5,34 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind; showStats: true;" 
+    <!-- 启动界面 -->
+    <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
+      <div style="text-align: center; color: white;">
+        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像</p>
+        <button id="startButton" style="
+          background: #fff; 
+          color: #667eea; 
+          border: none; 
+          padding: 15px 30px; 
+          font-size: 1.2em; 
+          border-radius: 25px; 
+          cursor: pointer; 
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          transition: transform 0.2s;
+        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          🎯 开始 AR 体验
+        </button>
+        <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.7;">请确保您已允许摄像头权限</p>
+      </div>
+    </div>
+
+    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
+             device-orientation-permission-ui="enabled: false"
+             loading-screen="enabled: false">
       
       <a-assets>
         <!-- 3D模型资源 -->
@@ -63,31 +86,66 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('AR 3D模型场景已加载');
+        const startScreen = document.getElementById('startScreen');
+        const startButton = document.getElementById('startButton');
+        const scene = document.querySelector('a-scene');
+        
+        // 初始隐藏场景
+        scene.style.display = 'none';
+        
+        // 启动按钮点击事件
+        startButton.addEventListener('click', async function() {
+          try {
+            // 隐藏启动界面
+            startScreen.style.display = 'none';
+            
+            // 显示AR场景
+            scene.style.display = 'block';
+            
+            // 等待场景加载
+            await new Promise(resolve => {
+              if (scene.hasLoaded) {
+                resolve();
+              } else {
+                scene.addEventListener('loaded', resolve);
+              }
+            });
+            
+            console.log('AR 3D模型场景已启动');
+            
+          } catch (error) {
+            console.error('启动AR失败:', error);
+            alert('启动AR失败，请检查摄像头权限并刷新页面重试');
+            startScreen.style.display = 'flex';
+            scene.style.display = 'none';
+          }
+        });
         
         // 监听模型加载状态
         const model = document.querySelector('#mainModel');
         
-        model.addEventListener('model-loaded', function() {
-          console.log('3D模型加载完成');
-        });
+        if (model) {
+          model.addEventListener('model-loaded', function() {
+            console.log('3D模型加载完成');
+          });
+          
+          model.addEventListener('model-error', function(event) {
+            console.error('3D模型加载失败:', event.detail);
+          });
+        }
         
-        model.addEventListener('model-error', function(event) {
-          console.error('3D模型加载失败:', event.detail);
-        });
-        
-        // 添加交互功能（可选）
+        // 添加目标识别事件监听
         const targetEntity = document.querySelector('[mindar-image-target]');
         
-        targetEntity.addEventListener('targetFound', function() {
-          console.log('识别目标找到');
-          // 可以添加找到目标时的特效
-        });
-        
-        targetEntity.addEventListener('targetLost', function() {
-          console.log('识别目标丢失');
-          // 可以添加丢失目标时的处理
-        });
+        if (targetEntity) {
+          targetEntity.addEventListener('targetFound', function() {
+            console.log('识别目标找到 - 显示3D模型');
+          });
+          
+          targetEntity.addEventListener('targetLost', function() {
+            console.log('识别目标丢失 - 隐藏3D模型');
+          });
+        }
       });
     </script>
   </body>
