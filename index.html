@@ -29,13 +29,18 @@
     </div>
 
     <!-- 提示文字 -->
-    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 14px;">
+    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 9999; font-size: 14px;">
       👆 点击下方按钮可以放大佛像
     </div>
 
-    <!-- 放大按钮 -->
-    <div id="zoomButton" style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 15px 25px; border-radius: 25px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; user-select: none;">
+    <!-- 放大按钮 - 提高层级并默认显示用于测试 -->
+    <div id="zoomButton" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 18px 30px; border-radius: 30px; font-family: Arial, sans-serif; font-weight: bold; display: block; z-index: 9999; font-size: 18px; box-shadow: 0 6px 20px rgba(255,215,0,0.4); cursor: pointer; user-select: none; min-width: 140px; text-align: center;">
       🔍 放大佛像
+    </div>
+
+    <!-- 调试信息 -->
+    <div id="debugInfo" style="position: fixed; top: 80px; left: 20px; color: white; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; font-family: monospace, sans-serif; display: block; z-index: 9999; font-size: 12px;">
+      状态: 等待启动
     </div>
 
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
