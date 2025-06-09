@@ -3,8 +3,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- A-Frame粒子系统 -->
-    <script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>
+    <!-- A-Frame粒子系统 - 使用更稳定的CDN -->
+    <script src="https://unpkg.com/aframe-particle-system-component@1.0.x/dist/aframe-particle-system-component.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
@@ -66,24 +66,24 @@
       
       <a-entity mindar-image-target="targetIndex: 0" id="mainTarget">
         
-        <!-- 显现特效粒子系统 -->
+        <!-- 显现特效粒子系统 - 简化配置 -->
         <a-entity id="manifestationParticles" 
                   position="0 0 0.1"
-                  particle-system="preset: dust; particleCount: 150; maxAge: 3; texture: ./dust-particle.svg; color: #FFD700,#FFA500; size: 0.5,0.05; velocity: 0 2 0; accelerationValue: 0 -1 0"
+                  particle-system="preset: dust; particleCount: 100; maxAge: 2; color: #FFD700,#FFA500; size: 0.3,0.05; velocity: 0 1 0; accelerationValue: 0 -0.5 0"
                   visible="false">
         </a-entity>
 
-        <!-- 佛光粒子系统 -->
+        <!-- 佛光粒子系统 - 简化配置 -->
         <a-entity id="divineLight" 
                   position="0 2 0"
-                  particle-system="preset: default; particleCount: 200; maxAge: 4; texture: ./light-particle.svg; color: #FFFFFF,#FFD700,#FFF8DC; size: 0.8,0.1; velocity: 0 -3 0; accelerationValue: 0 0.5 0; opacity: 0.8,0.2"
+                  particle-system="preset: default; particleCount: 150; maxAge: 3; color: #FFFFFF,#FFD700; size: 0.5,0.1; velocity: 0 -2 0; accelerationValue: 0 0.3 0; opacity: 0.8,0.2"
                   visible="false">
         </a-entity>
 
-        <!-- 环绕光粒子 -->
+        <!-- 环绕光粒子 - 简化配置 -->
         <a-entity id="ambientParticles" 
                   position="0 0 0.2"
-                  particle-system="preset: default; particleCount: 80; maxAge: 8; color: #FFD700,#FFECB3; size: 0.3,0.05; velocity: 0 0.5 0; accelerationValue: 0 0 0; opacity: 0.6,0.1"
+                  particle-system="preset: default; particleCount: 50; maxAge: 6; color: #FFD700,#FFECB3; size: 0.2,0.05; velocity: 0 0.3 0; opacity: 0.6,0.1"
                   visible="false"
                   animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
         </a-entity>
@@ -163,30 +163,70 @@
         let isTracking = false;
         let effectPlaying = false;
         
+        // 检查必要的库是否加载
+        if (typeof AFRAME === 'undefined') {
+          debugInfo.innerHTML = '错误: A-Frame未加载';
+          console.error('A-Frame库未正确加载');
+        } else if (typeof MINDAR === 'undefined') {
+          debugInfo.innerHTML = '错误: MindAR未加载';
+          console.error('MindAR库未正确加载');
+        } else {
+          debugInfo.innerHTML = '状态: 库已加载，等待启动';
+          console.log('A-Frame和MindAR库已正确加载');
+        }
+        
         // 初始隐藏场景
         scene.style.display = 'none';
         
         // 启动按钮点击事件
         startButton.addEventListener('click', async function() {
           try {
+            debugInfo.innerHTML = '状态: 正在启动AR...';
+            
+            // 先请求摄像头权限
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+              });
+              console.log('摄像头权限获取成功');
+              // 立即停止流，让MindAR接管
+              stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+              console.error('摄像头权限获取失败:', error);
+              alert('需要摄像头权限才能使用AR功能，请允许并刷新页面重试');
+              return;
+            }
+            
             startScreen.style.display = 'none';
             scene.style.display = 'block';
             
-            await new Promise(resolve => {
+            debugInfo.innerHTML = '状态: 加载AR场景中...';
+            
+            // 等待场景完全加载
+            await new Promise((resolve, reject) => {
+              let timeout = setTimeout(() => {
+                reject(new Error('场景加载超时'));
+              }, 10000); // 10秒超时
+              
               if (scene.hasLoaded) {
+                clearTimeout(timeout);
                 resolve();
               } else {
-                scene.addEventListener('loaded', resolve);
+                scene.addEventListener('loaded', () => {
+                  clearTimeout(timeout);
+                  resolve();
+                });
               }
             });
             
-            console.log('AR 佛像场景已启动');
             debugInfo.innerHTML = '状态: AR已启动，等待识别图';
+            console.log('AR 佛像场景已启动');
             setupEventListeners();
             
           } catch (error) {
             console.error('启动AR失败:', error);
-            alert('启动AR失败，请检查摄像头权限并刷新页面重试');
+            debugInfo.innerHTML = '状态: 启动失败 - ' + error.message;
+            alert('启动AR失败: ' + error.message + '\n请刷新页面重试');
             startScreen.style.display = 'flex';
             scene.style.display = 'none';
           }
@@ -195,6 +235,22 @@
         // 设置事件监听器
         function setupEventListeners() {
           const targetEntity = document.querySelector('[mindar-image-target]');
+          
+          if (!targetEntity) {
+            debugInfo.innerHTML = '错误: 无法找到识别目标元素';
+            console.error('无法找到mindar-image-target元素');
+            return;
+          }
+          
+          // MindAR系统事件
+          const arSystem = document.querySelector('a-scene').systems['mindar-image-system'];
+          if (arSystem) {
+            console.log('MindAR系统已找到');
+            debugInfo.innerHTML = '状态: MindAR已就绪，请扫描识别图';
+          } else {
+            console.warn('MindAR系统未找到');
+            debugInfo.innerHTML = '警告: MindAR系统未正确加载';
+          }
           
           // 目标检测事件
           targetEntity.addEventListener('targetFound', function() {
@@ -215,9 +271,15 @@
           
           // 按钮事件
           setupButtons();
+          
+          // 添加场景错误监听
+          scene.addEventListener('error', function(event) {
+            console.error('场景错误:', event);
+            debugInfo.innerHTML = '错误: 场景加载失败';
+          });
         }
         
-        // 神圣显现序列
+        // 神圣显现序列 - 简化版本
         async function startManifestationSequence() {
           if (effectPlaying) return;
           effectPlaying = true;
@@ -232,39 +294,31 @@
           try {
             // 第1步：显现粒子特效 (1秒)
             debugInfo.innerHTML = '✨ 第1步: 显现特效';
-            manifestationParticles.setAttribute('visible', true);
+            if (manifestationParticles) {
+              manifestationParticles.setAttribute('visible', true);
+            }
             await sleep(1000);
             
-            // 第2步：显示裸模（黑白无材质）(0.5秒)
-            debugInfo.innerHTML = '🗿 第2步: 显现裸模';
+            // 第2步：显示模型 (0.5秒)
+            debugInfo.innerHTML = '🗿 第2步: 显现佛像';
             model.setAttribute('visible', true);
-            
-            // 设置为黑白材质
-            model.addEventListener('model-loaded', function() {
-              setModelMaterial(model, {
-                color: '#666666',
-                metalness: 0.1,
-                roughness: 0.9,
-                opacity: 0.8
-              });
-            });
-            
             await sleep(800);
             
-            // 第3步：逐渐着色 (2秒)
-            debugInfo.innerHTML = '🎨 第3步: 逐渐着色';
-            await gradualColorization(model);
+            // 第3步：神圣佛光 (2秒)
+            debugInfo.innerHTML = '🌟 第3步: 佛光天降';
+            if (divineLight) {
+              divineLight.setAttribute('visible', true);
+            }
+            if (divineBeam) {
+              await showDivineBeam(divineBeam, divineLight);
+            }
             
-            // 第4步：神圣佛光从天而降 (3秒)
-            debugInfo.innerHTML = '🌟 第4步: 佛光天降';
-            await showDivineBeam(divineBeam, divineLight);
-            
-            // 第5步：场景光辉增强 (2秒)
-            debugInfo.innerHTML = '💫 第5步: 光辉增强';
+            // 第4步：场景光辉增强 (1.5秒)
+            debugInfo.innerHTML = '💫 第4步: 光辉增强';
             await enhanceSceneLighting();
             
-            // 第6步：开始旋转和环绕特效
-            debugInfo.innerHTML = '🔄 第6步: 神圣旋转';
+            // 第5步：开始旋转和环绕特效
+            debugInfo.innerHTML = '🔄 第5步: 神圣旋转';
             startRotationAndAmbience(model, halo, ambientParticles);
             
             debugInfo.innerHTML = '✅ 神圣显现完成<br>🔍 可使用按钮互动';
@@ -272,6 +326,7 @@
             
           } catch (error) {
             console.error('特效序列出错:', error);
+            debugInfo.innerHTML = '错误: 特效播放失败';
             effectPlaying = false;
           }
         }
