@@ -1,150 +1,125 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>佛像 AR 体验【最终修正版】</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta charset="UTF-8">
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component/dist/aframe-particle-system-component.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
+      body, html { margin: 0; overflow: hidden; height: 100%; }
+      #startScreen {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 1000; font-family: Arial, sans-serif;
+      }
+      #startScreen h1 {
+        font-size: 2.5em; margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        color: white;
+      }
+      #startScreen p { color: white; opacity: 0.9; }
+      #startButton {
+        background: #fff; color: #667eea; border: none;
+        padding: 15px 30px; font-size: 1.2em; border-radius: 25px;
+        cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
+      }
+      #startButton:hover { transform: scale(1.05); }
     </style>
   </head>
   <body>
-    <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-      <div style="text-align: center; color: white;">
-        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后，佛像将伴随佛光一同显现</p>
-        <button id="startButton" style="background: #fff; color: #667eea; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-          🎯 开始 AR 体验
-        </button>
-        <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.7;">请确保您已允许摄像头权限</p>
+    <div id="startScreen">
+      <div style="text-align: center;">
+        <h1>🧘 佛像 AR</h1>
+        <p>体验增强现实中的3D佛像模型</p>
+        <p>💡 请扫描识别图开始体验</p>
+        <button id="startButton">🎯 开始 AR 体验</button>
       </div>
     </div>
 
-    <div id="zoomButton" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 18px 30px; border-radius: 30px; font-family: Arial, sans-serif; font-weight: bold; z-index: 9999; font-size: 18px; box-shadow: 0 6px 20px rgba(255,215,0,0.4); cursor: pointer; user-select: none; min-width: 140px; text-align: center; display: none;">
-      🔍 放大佛像
-    </div>
+    <a-assets>
+      <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
+      <audio id="chant" src="./chant.mp3"></audio>
+    </a-assets>
 
-    <a-scene id="ar-scene" mindar-image="imageTargetSrc: ./qianfo.mind; filterMinCF:0.0001; filterBeta: 0.001;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false"
-             loading-screen="enabled: false"
-             style="display: none;">
-      
-      <a-assets>
-        <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
-      </a-assets>
+    <a-scene id="arScene" style="display: none;"
+             mindar-image="imageTargetSrc: ./qianfo.mind"
+             embedded
+             color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights"
+             vr-mode-ui="enabled: false">
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      
-      <a-entity id="ar-anchor" mindar-image-target="targetIndex: 0" visible="false">
-        
-        <a-gltf-model 
-          id="mainModel"
-          rotation="0 0 0" 
-          position="0 0 0.1" 
-          scale="0.8 0.8 0.8" 
-          src="#buddhistModel" 
-          material="opacity: 0; transparent: true;"
-          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate;"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true;">
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-gltf-model id="buddha"
+                      src="#buddhistModel"
+                      position="0 0 0.1"
+                      scale="0.8 0.8 0.8"
+                      material="color: #888; metalness: 0.3; roughness: 0.8">
         </a-gltf-model>
-        
-        <a-light id="buddhaRay"
-                 type="spot"
-                 color="#FFD700"
-                 intensity="0"
-                 angle="40"
-                 penumbra="0.4"
-                 distance="5"
-                 position="0 1.5 0.5"
-                 target="#mainModel">
-        </a-light>
-        
-        <a-light type="ambient" color="#665544" intensity="0.7"></a-light>
-        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="1.0"></a-light>
+
+        <a-entity id="particles"
+                  particle-system="preset: dust; particleCount: 300; color: #ffd700; size: 0.05"
+                  position="0 0.5 0.1" visible="false"></a-entity>
+
+        <a-ring id="halo"
+                position="0 0.05 0"
+                rotation="-90 0 0"
+                radius-inner="0.3"
+                radius-outer="0.45"
+                color="#fff59d"
+                opacity="0.4"
+                visible="false"
+                material="shader: flat"
+                animation="property: rotation; to: -90 360 0; dur: 10000; loop: true; easing: linear">
+        </a-ring>
+
+        <a-light id="topLight" type="spot" color="#fffde7" position="0 1 0" intensity="0.0" angle="45"></a-light>
+
+        <a-sound id="buddhaSound" src="#chant" autoplay="false"></a-sound>
       </a-entity>
     </a-scene>
 
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const startButton = document.getElementById('startButton');
-        const scene = document.getElementById('ar-scene');
-        const zoomButton = document.getElementById('zoomButton');
-        const anchor = document.getElementById('ar-anchor');
-        const model = document.getElementById('mainModel');
-        const buddhaRay = document.getElementById('buddhaRay');
-        let isLarge = false;
-
-        startButton.addEventListener('click', () => {
-          startScreen.style.display = 'none';
-          scene.style.display = 'block';
-        });
-
-        // 【最终修正2】JS中，在targetFound时动态“注入并播放”动画
-        anchor.addEventListener("targetFound", event => {
-          console.log("识别成功，直接注入并播放动画！");
-          anchor.setAttribute('visible', 'true');
-          zoomButton.style.display = 'block';
-
-          // 直接命令模型播放“淡入”动画
-          model.setAttribute('animation__fadein', {
-            property: 'material.opacity',
-            from: 0,
-            to: 1,
-            dur: 2000,
-            easing: 'easeInQuad'
-          });
-
-          // 直接命令佛光播放“亮起”动画
-          buddhaRay.setAttribute('animation__lighton', {
-            property: 'light.intensity',
-            from: 0,
-            to: 4.0,
-            dur: 1800,
-            easing: 'easeInCubic'
-          });
-        });
-
-        // 【最终修正3】JS中，在targetLost时移除动画并重置属性
-        anchor.addEventListener("targetLost", event => {
-          console.log("识别丢失，移除动画并重置状态。");
-          anchor.setAttribute('visible', 'false');
-          zoomButton.style.display = 'none';
-
-          // 重置基础属性
-          model.setAttribute('material', 'opacity', 0);
-          buddhaRay.setAttribute('light', 'intensity', 0);
-          
-          // 移除刚刚添加的动画组件，确保环境干净
-          model.removeAttribute('animation__fadein');
-          buddhaRay.removeAttribute('animation__lighton');
-        });
-
-        // 缩放按钮逻辑 (保持不变)
-        zoomButton.addEventListener('click', () => {
-          if (!anchor.getAttribute('visible')) return;
-          const hoverAnimation = model.getAttribute('animation');
-          if (!isLarge) {
-            model.setAttribute('animation__scale', { property: 'scale', to: '1.8 1.8 1.8', dur: 1500, easing: 'easeOutBack' });
-            if (hoverAnimation) { model.setAttribute('animation', 'enabled', false); }
-            model.setAttribute('position', '0 0 0.4');
-            zoomButton.innerHTML = '✨ 缩小佛像';
-            zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
-            isLarge = true;
-          } else {
-            model.setAttribute('animation__scale', { property: 'scale', to: '0.8 0.8 0.8', dur: 1200, easing: 'easeInOutQuad' });
-            if (hoverAnimation) { model.setAttribute('animation', 'enabled', true); }
-            zoomButton.innerHTML = '🔍 放大佛像';
-            zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
-            isLarge = false;
-          }
-        });
+      document.getElementById('startButton').addEventListener('click', () => {
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('arScene').style.display = 'block';
       });
+
+      AFRAME.registerComponent('buddha-appearance', {
+        init: function () {
+          const sceneEl = this.el.sceneEl;
+          const buddha = document.querySelector('#buddha');
+          const particles = document.querySelector('#particles');
+          const halo = document.querySelector('#halo');
+          const light = document.querySelector('#topLight');
+          const sound = document.querySelector('#buddhaSound');
+
+          this.el.addEventListener('targetFound', () => {
+            buddha.setAttribute('animation__fade', {
+              property: 'material.color', to: '#ffffff', dur: 1500, easing: 'easeInOutQuad'
+            });
+            halo.setAttribute('visible', 'true');
+            particles.setAttribute('visible', 'true');
+            light.setAttribute('animation__brighten', {
+              property: 'intensity', to: 2.5, dur: 2000
+            });
+            sound.components.sound.playSound();
+          });
+
+          this.el.addEventListener('targetLost', () => {
+            halo.setAttribute('visible', 'false');
+            particles.setAttribute('visible', 'false');
+            light.setAttribute('intensity', '0.0');
+          });
+        }
+      });
+
+      document.querySelector('[mindar-image-target]').setAttribute('buddha-appearance', '');
     </script>
   </body>
 </html>
