@@ -4,7 +4,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component/dist/aframe-particle-system-component.min.js"></script>
     <style>
       html, body {
         margin: 0;
@@ -70,10 +69,6 @@
                       material="color: #888; metalness: 0.3; roughness: 0.8">
         </a-gltf-model>
 
-        <a-entity id="particles"
-                  particle-system="preset: dust; particleCount: 300; color: #ffd700; size: 0.05"
-                  position="0 0.5 0.1" visible="false"></a-entity>
-
         <a-ring id="halo"
                 position="0 0.05 0"
                 rotation="-90 0 0"
@@ -102,7 +97,6 @@
         init: function () {
           const sceneEl = this.el.sceneEl;
           const buddha = document.querySelector('#buddha');
-          const particles = document.querySelector('#particles');
           const halo = document.querySelector('#halo');
           const light = document.querySelector('#topLight');
           const sound = document.querySelector('#buddhaSound');
@@ -112,7 +106,6 @@
               property: 'material.color', to: '#ffffff', dur: 1500, easing: 'easeInOutQuad'
             });
             halo.setAttribute('visible', 'true');
-            particles.setAttribute('visible', 'true');
             light.setAttribute('animation__brighten', {
               property: 'intensity', to: 2.5, dur: 2000
             });
@@ -121,7 +114,6 @@
 
           this.el.addEventListener('targetLost', () => {
             halo.setAttribute('visible', 'false');
-            particles.setAttribute('visible', 'false');
             light.setAttribute('intensity', '0.0');
           });
         }
