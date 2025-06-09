@@ -3,8 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- A-Frame粒子系统 - 使用更稳定的CDN -->
-    <script src="https://unpkg.com/aframe-particle-system-component@1.0.x/dist/aframe-particle-system-component.min.js"></script>
+    <!-- 暂时移除粒子系统，先确保基本AR功能正常 -->
   </head>
   <body>
     <!-- 启动界面 -->
@@ -202,20 +201,33 @@
             
             debugInfo.innerHTML = '状态: 加载AR场景中...';
             
-            // 等待场景完全加载
+            // 等待场景完全加载 - 延长超时时间
             await new Promise((resolve, reject) => {
               let timeout = setTimeout(() => {
-                reject(new Error('场景加载超时'));
-              }, 10000); // 10秒超时
+                reject(new Error('场景加载超时（20秒）'));
+              }, 20000); // 延长到20秒超时
               
+              let checkCount = 0;
+              const checkInterval = setInterval(() => {
+                checkCount++;
+                debugInfo.innerHTML = `状态: 检查场景加载... (${checkCount}秒)`;
+                
+                if (scene.hasLoaded) {
+                  clearTimeout(timeout);
+                  clearInterval(checkInterval);
+                  resolve();
+                } else if (checkCount >= 20) {
+                  clearTimeout(timeout);
+                  clearInterval(checkInterval);
+                  reject(new Error('场景组件加载超时'));
+                }
+              }, 1000);
+              
+              // 如果已经加载，立即resolve
               if (scene.hasLoaded) {
                 clearTimeout(timeout);
+                clearInterval(checkInterval);
                 resolve();
-              } else {
-                scene.addEventListener('loaded', () => {
-                  clearTimeout(timeout);
-                  resolve();
-                });
               }
             });
             
@@ -279,54 +291,41 @@
           });
         }
         
-        // 神圣显现序列 - 简化版本
+        // 简化的神圣显现序列
         async function startManifestationSequence() {
           if (effectPlaying) return;
           effectPlaying = true;
           
           const model = document.querySelector('#mainModel');
-          const manifestationParticles = document.querySelector('#manifestationParticles');
-          const divineLight = document.querySelector('#divineLight');
-          const ambientParticles = document.querySelector('#ambientParticles');
           const divineBeam = document.querySelector('#divineBeam');
           const halo = document.querySelector('#halo');
           
           try {
-            // 第1步：显现粒子特效 (1秒)
-            debugInfo.innerHTML = '✨ 第1步: 显现特效';
-            if (manifestationParticles) {
-              manifestationParticles.setAttribute('visible', true);
-            }
+            // 第1步：显示佛像模型 (1秒)
+            debugInfo.innerHTML = '✨ 第1步: 显现佛像';
+            model.setAttribute('visible', true);
             await sleep(1000);
             
-            // 第2步：显示模型 (0.5秒)
-            debugInfo.innerHTML = '🗿 第2步: 显现佛像';
-            model.setAttribute('visible', true);
-            await sleep(800);
-            
-            // 第3步：神圣佛光 (2秒)
-            debugInfo.innerHTML = '🌟 第3步: 佛光天降';
-            if (divineLight) {
-              divineLight.setAttribute('visible', true);
-            }
+            // 第2步：神圣光束效果 (2秒)
+            debugInfo.innerHTML = '🌟 第2步: 神圣光束';
             if (divineBeam) {
-              await showDivineBeam(divineBeam, divineLight);
+              await showDivineBeam(divineBeam);
             }
             
-            // 第4步：场景光辉增强 (1.5秒)
-            debugInfo.innerHTML = '💫 第4步: 光辉增强';
+            // 第3步：场景光辉增强 (1.5秒)
+            debugInfo.innerHTML = '💫 第3步: 光辉增强';
             await enhanceSceneLighting();
             
-            // 第5步：开始旋转和环绕特效
-            debugInfo.innerHTML = '🔄 第5步: 神圣旋转';
-            startRotationAndAmbience(model, halo, ambientParticles);
+            // 第4步：开始旋转效果
+            debugInfo.innerHTML = '🔄 第4步: 神圣旋转';
+            startRotationAndAmbience(model, halo);
             
             debugInfo.innerHTML = '✅ 神圣显现完成<br>🔍 可使用按钮互动';
             effectPlaying = false;
             
           } catch (error) {
             console.error('特效序列出错:', error);
-            debugInfo.innerHTML = '错误: 特效播放失败';
+            debugInfo.innerHTML = '错误: 特效播放失败 - ' + error.message;
             effectPlaying = false;
           }
         }
@@ -367,11 +366,10 @@
           }
         }
         
-        // 显示神圣光束
-        async function showDivineBeam(beam, lightParticles) {
-          // 显示光束和粒子
+        // 显示神圣光束 - 简化版
+        async function showDivineBeam(beam) {
+          // 显示光束
           beam.setAttribute('visible', true);
-          lightParticles.setAttribute('visible', true);
           
           // 光束从上方降下并逐渐显现
           beam.setAttribute('animation', 'property: opacity; to: 0.7; dur: 1500; easing: easeOutQuad');
@@ -379,7 +377,9 @@
           
           // 光束光源逐渐增强
           const beamLight = document.querySelector('#divineBeamLight');
-          beamLight.setAttribute('animation', 'property: light.intensity; to: 3.0; dur: 2000; easing: easeInOutQuad');
+          if (beamLight) {
+            beamLight.setAttribute('animation', 'property: light.intensity; to: 3.0; dur: 2000; easing: easeInOutQuad');
+          }
           
           await sleep(3000);
           
@@ -415,22 +415,23 @@
           await sleep(1500);
         }
         
-        // 开始旋转和环绕特效
-        function startRotationAndAmbience(model, halo, ambientParticles) {
+        // 开始旋转和光环特效 - 简化版
+        function startRotationAndAmbience(model, halo) {
           // 模型开始悬浮和旋转
           model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate');
           model.setAttribute('animation__rotation', 'property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true');
           
           // 显示光环
-          halo.setAttribute('visible', true);
-          halo.setAttribute('animation__appear', 'property: opacity; to: 0.6; dur: 2000; easing: easeOutQuad');
-          
-          // 显示环绕粒子
-          ambientParticles.setAttribute('visible', true);
+          if (halo) {
+            halo.setAttribute('visible', true);
+            halo.setAttribute('animation__appear', 'property: opacity; to: 0.6; dur: 2000; easing: easeOutQuad');
+          }
           
           // 光源跟随旋转
           const lightRig = document.querySelector('#lightRig');
-          lightRig.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true');
+          if (lightRig) {
+            lightRig.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true');
+          }
         }
         
         // 按钮功能设置
@@ -452,10 +453,10 @@
           });
         }
         
-        // 重置并重播特效
+        // 重置并重播特效 - 简化版
         function resetAndReplayEffect() {
           // 隐藏所有特效元素
-          const elements = ['#mainModel', '#manifestationParticles', '#divineLight', '#ambientParticles', '#divineBeam', '#halo'];
+          const elements = ['#mainModel', '#divineBeam', '#halo'];
           elements.forEach(selector => {
             const el = document.querySelector(selector);
             if (el) {
