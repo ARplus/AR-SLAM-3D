@@ -34,14 +34,17 @@
       👆 点击下方按钮可以放大佛像
     </div>
 
-    <!-- 放大按钮 -->
-    <div id="zoomButton" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 18px 30px; border-radius: 30px; font-family: Arial, sans-serif; font-weight: bold; display: block; z-index: 9999; font-size: 18px; box-shadow: 0 6px 20px rgba(255,215,0,0.4); cursor: pointer; user-select: none; min-width: 140px; text-align: center;">
-      🔍 放大佛像
-    </div>
+    <!-- 右下角按钮组 -->
+    <div style="position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 9999;">
+      <!-- 放大按钮 -->
+      <div id="zoomButton" style="background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(255,215,0,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
+        🔍 放大
+      </div>
 
-    <!-- 特效控制按钮 -->
-    <div id="effectButton" style="position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none; padding: 15px 25px; border-radius: 25px; font-family: Arial, sans-serif; font-weight: bold; display: block; z-index: 9999; font-size: 16px; box-shadow: 0 4px 15px rgba(255,107,107,0.4); cursor: pointer; user-select: none; min-width: 120px; text-align: center;">
-      ✨ 重播特效
+      <!-- 特效控制按钮 -->
+      <div id="effectButton" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(255,107,107,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
+        ✨ 重播
+      </div>
     </div>
 
     <!-- 调试信息 -->
@@ -298,18 +301,21 @@
           
           const model = document.querySelector('#mainModel');
           const divineBeam = document.querySelector('#divineBeam');
+          const divineBeamCore = document.querySelector('#divineBeamCore');
           const halo = document.querySelector('#halo');
           
           try {
-            // 第1步：显示佛像模型 (1秒)
-            debugInfo.innerHTML = '✨ 第1步: 显现佛像';
+            // 第1步：佛像渐显 (2秒)
+            debugInfo.innerHTML = '✨ 第1步: 佛像渐显';
             model.setAttribute('visible', true);
-            await sleep(1000);
+            model.setAttribute('material', 'opacity: 0; transparent: true');
+            model.setAttribute('animation__fadein', 'property: material.opacity; to: 1; dur: 2000; easing: easeOutQuad');
+            await sleep(2000);
             
             // 第2步：神圣光束效果 (2秒)
             debugInfo.innerHTML = '🌟 第2步: 神圣光束';
-            if (divineBeam) {
-              await showDivineBeam(divineBeam);
+            if (divineBeam && divineBeamCore) {
+              await showDivineBeam(divineBeam, divineBeamCore);
             }
             
             // 第3步：场景光辉增强 (1.5秒)
@@ -366,29 +372,38 @@
           }
         }
         
-        // 显示神圣光束 - 简化版
-        async function showDivineBeam(beam) {
-          // 显示光束
+        // 显示神圣光束 - 优化版
+        async function showDivineBeam(beam, beamCore) {
+          // 显示双层光束
           beam.setAttribute('visible', true);
+          beamCore.setAttribute('visible', true);
           
-          // 光束从上方降下并逐渐显现
-          beam.setAttribute('animation', 'property: opacity; to: 0.7; dur: 1500; easing: easeOutQuad');
-          beam.setAttribute('animation__descend', 'property: position; to: 0 0 0; dur: 2500; easing: easeOutBack');
+          // 外层光束效果
+          beam.setAttribute('animation', 'property: opacity; to: 0.8; dur: 1500; easing: easeOutQuad');
+          beam.setAttribute('animation__descend', 'property: position; to: 0 0.5 0; dur: 2500; easing: easeOutBack');
+          beam.setAttribute('animation__pulse', 'property: material.emissiveIntensity; to: 0.6; from: 0.3; dur: 1000; easing: easeInOutSine; loop: true; dir: alternate');
+          
+          // 内核光束效果
+          beamCore.setAttribute('animation', 'property: opacity; to: 0.9; dur: 1500; easing: easeOutQuad');
+          beamCore.setAttribute('animation__descend', 'property: position; to: 0 0.5 0; dur: 2500; easing: easeOutBack');
+          beamCore.setAttribute('animation__pulse', 'property: material.emissiveIntensity; to: 1.2; from: 0.8; dur: 800; easing: easeInOutSine; loop: true; dir: alternate');
           
           // 光束光源逐渐增强
           const beamLight = document.querySelector('#divineBeamLight');
           if (beamLight) {
-            beamLight.setAttribute('animation', 'property: light.intensity; to: 3.0; dur: 2000; easing: easeInOutQuad');
+            beamLight.setAttribute('animation', 'property: light.intensity; to: 4.0; dur: 2000; easing: easeInOutQuad');
           }
           
           await sleep(3000);
           
           // 光束逐渐消失，但光源保持
-          beam.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 1000; easing: easeInQuad');
+          beam.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 1500; easing: easeInQuad');
+          beamCore.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 1500; easing: easeInQuad');
           
           setTimeout(() => {
             beam.setAttribute('visible', false);
-          }, 1000);
+            beamCore.setAttribute('visible', false);
+          }, 1500);
         }
         
         // 增强场景光效
@@ -415,11 +430,11 @@
           await sleep(1500);
         }
         
-        // 开始旋转和光环特效 - 简化版
+        // 开始旋转和光环特效 - 优化版
         function startRotationAndAmbience(model, halo) {
-          // 模型开始悬浮和旋转
-          model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate');
-          model.setAttribute('animation__rotation', 'property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true');
+          // 模型开始悬浮和旋转（加快旋转速度）
+          model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate');
+          model.setAttribute('animation__rotation', 'property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true');
           
           // 显示光环
           if (halo) {
@@ -427,10 +442,10 @@
             halo.setAttribute('animation__appear', 'property: opacity; to: 0.6; dur: 2000; easing: easeOutQuad');
           }
           
-          // 光源跟随旋转
+          // 光源跟随旋转（同样加快速度）
           const lightRig = document.querySelector('#lightRig');
           if (lightRig) {
-            lightRig.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true');
+            lightRig.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true');
           }
         }
         
@@ -453,10 +468,10 @@
           });
         }
         
-        // 重置并重播特效 - 简化版
+        // 重置并重播特效 - 优化版
         function resetAndReplayEffect() {
           // 隐藏所有特效元素
-          const elements = ['#mainModel', '#divineBeam', '#halo'];
+          const elements = ['#mainModel', '#divineBeam', '#divineBeamCore', '#halo'];
           elements.forEach(selector => {
             const el = document.querySelector(selector);
             if (el) {
@@ -466,6 +481,8 @@
               el.removeAttribute('animation__descend');
               el.removeAttribute('animation__fadeout');
               el.removeAttribute('animation__rotation');
+              el.removeAttribute('animation__fadein');
+              el.removeAttribute('animation__pulse');
             }
           });
           
@@ -501,14 +518,14 @@
           if (!isLarge) {
             model.setAttribute('animation__scale', 'property: scale; to: 1.8 1.8 1.8; dur: 1500; easing: easeOutBack');
             model.setAttribute('position', '0 0 0.4');
-            zoomButton.innerHTML = '🔍 缩小佛像';
+            zoomButton.innerHTML = '🔍 缩小';
             zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
             isLarge = true;
             debugInfo.innerHTML = '状态: 佛像已放大✨';
           } else {
             model.setAttribute('animation__scale', 'property: scale; to: 0.8 0.8 0.8; dur: 1200; easing: easeInOutQuad');
-            model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate');
-            zoomButton.innerHTML = '🔍 放大佛像';
+            model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate');
+            zoomButton.innerHTML = '🔍 放大';
             zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
             isLarge = false;
             debugInfo.innerHTML = '状态: 佛像已缩小';
