@@ -1,370 +1,137 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <title>佛像 AR 体验</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      /* 添加一些基本样式让体验更沉浸 */
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
   </head>
   <body>
-    <!-- 启动界面 -->
-    <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
+    <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验佛光降临的增强现实觉醒</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">🌟 佛光普照 | 觉醒显现 | 光明无量</p>
-        <button id="startButton" style="
-          background: #fff; 
-          color: #667eea; 
-          border: none; 
-          padding: 15px 30px; 
-          font-size: 1.2em; 
-          border-radius: 25px; 
-          cursor: pointer; 
-          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-          transition: transform 0.2s;
-        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-          🌟 开启佛光觉醒
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
+        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后，佛像将伴随佛光一同显现</p>
+        <button id="startButton" style="background: #fff; color: #667eea; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          🎯 开始 AR 体验
         </button>
-        <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.7;">✨ 准备好见证神圣时刻</p>
+        <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.7;">请确保您已允许摄像头权限</p>
       </div>
     </div>
 
-    <!-- 提示文字 -->
-    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 9999; font-size: 14px;">
-      👆 点击下方按钮可以放大佛像
-    </div>
-
-    <!-- 放大按钮 - 提高层级并默认显示用于测试 -->
-    <div id="zoomButton" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 18px 30px; border-radius: 30px; font-family: Arial, sans-serif; font-weight: bold; display: block; z-index: 9999; font-size: 18px; box-shadow: 0 6px 20px rgba(255,215,0,0.4); cursor: pointer; user-select: none; min-width: 140px; text-align: center;">
+    <div id="zoomButton" style="position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 18px 30px; border-radius: 30px; font-family: Arial, sans-serif; font-weight: bold; z-index: 9999; font-size: 18px; box-shadow: 0 6px 20px rgba(255,215,0,0.4); cursor: pointer; user-select: none; min-width: 140px; text-align: center; display: none;">
       🔍 放大佛像
     </div>
 
-    <!-- 调试信息 -->
-    <div id="debugInfo" style="position: fixed; top: 80px; left: 20px; color: white; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; font-family: monospace, sans-serif; display: block; z-index: 9999; font-size: 12px;">
-      状态: 等待启动
-    </div>
-
-    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
+    <a-scene id="ar-scene" mindar-image="imageTargetSrc: ./qianfo.mind; filterMinCF:0.0001; filterBeta: 0.001;" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false"
-             loading-screen="enabled: false">
+             loading-screen="enabled: false"
+             style="display: none;">
       
       <a-assets>
-        <!-- 佛像3D模型 -->
         <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 佛像3D模型 - 带开场特效 -->
+      <a-entity id="ar-anchor" mindar-image-target="targetIndex: 0" visible="false">
+        
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
           position="0 0 0.1" 
-          scale="0.01 0.01 0.01"
+          scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
-          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true"
-          material="color: #333333"
-          visible="false">
+          material="opacity: 0; transparent: true;"
+          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate; enabled: true;"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true; enabled: true;"
+          animation__fadein="property: material.opacity; from: 0; to: 1; dur: 2000; startEvents: model-appear; easing: easeInQuad; enabled: false;">
         </a-gltf-model>
         
-        <!-- 佛光特效系统 -->
-        <!-- 主佛光 - 跟随模型旋转 -->
-        <a-entity id="lightRig" 
-                  animation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true">
-          <a-light type="point" position="0 0.3 0.3" color="#ffd700" intensity="0.1"></a-light>
-          <a-light type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="0.1" 
-                   angle="45" penumbra="0.2"></a-light>
-        </a-entity>
+        <a-light id="buddhaRay"
+                 type="spot"
+                 color="#FFD700"
+                 intensity="0"
+                 angle="40"
+                 penumbra="0.4"
+                 distance="5"
+                 position="0 1.5 0.5"
+                 target="#mainModel"
+                 animation="property: intensity; from:0; to: 4.0; dur: 1800; startEvents: model-appear; easing: easeInCubic; enabled: false;">
+        </a-light>
         
-        <!-- 天降佛光 - 开场特效 -->
-        <a-entity id="divineLight">
-          <a-light id="heavenLight" type="spot" position="0 3 1" color="#fffacd" intensity="0" 
-                   angle="15" penumbra="0.1" target="#mainModel"></a-light>
-          
-          <!-- 佛光可视化柱 -->
-          <a-cylinder id="lightBeam" 
-                      position="0 1.5 0.5" 
-                      radius="0.08" 
-                      height="3" 
-                      color="#fffacd" 
-                      opacity="0"
-                      material="transparent: true">
-          </a-cylinder>
-          
-          <!-- 光环效果 -->
-          <a-ring id="halo" 
-                  position="0 0.5 0" 
-                  radius-inner="0.3" 
-                  radius-outer="0.4" 
-                  color="#ffd700" 
-                  opacity="0"
-                  rotation="-90 0 0"
-                  material="transparent: true">
-          </a-ring>
-        </a-entity>
-        
-        <!-- 觉醒粒子效果 -->
-        <a-entity id="awakeningParticles">
-          <a-sphere class="particle" position="0.2 0.2 0.2" radius="0.005" color="#ffd700" opacity="0"></a-sphere>
-          <a-sphere class="particle" position="-0.2 0.3 0.1" radius="0.005" color="#ffecb3" opacity="0"></a-sphere>
-          <a-sphere class="particle" position="0.1 -0.1 0.3" radius="0.005" color="#fff3e0" opacity="0"></a-sphere>
-          <a-sphere class="particle" position="-0.1 0.4 0.2" radius="0.005" color="#ffc107" opacity="0"></a-sphere>
-          <a-sphere class="particle" position="0.3 0.1 0.1" radius="0.005" color="#ffab00" opacity="0"></a-sphere>
-          <a-sphere class="particle" position="-0.3 0.2 0.3" radius="0.005" color="#ff8f00" opacity="0"></a-sphere>
-        </a-entity>
-        
-        <!-- 洞窟回音效果 -->
-        <a-ring 
-          position="0 0 -0.5" 
-          radius-inner="0.8" 
-          radius-outer="0.82" 
-          color="#37474f" 
-          opacity="0"
-          animation="property: scale; to: 1.5 1.5 1.5; dur: 8000; easing: easeOutQuart; loop: true">
-        </a-ring>
-        
-        <!-- 增强环境光 -->
-        <a-light type="ambient" color="#2c1810" intensity="0.1"></a-light>
-        
-        <!-- 多角度补光 -->
-        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="0.2"></a-light>
-        <a-light type="point" position="1 0.5 0.5" color="#ffe082" intensity="0.2"></a-light>
-        <a-light type="point" position="-1 0.5 0.5" color="#ffe082" intensity="0.2"></a-light>
-        
-        <!-- 底部反射光 -->
-        <a-light type="point" position="0 -0.3 0.2" color="#fff8e1" intensity="0.1"></a-light>
-        
-        <!-- 简单的洞窟回音效果 -->
-        <a-ring 
-          position="0 0 -0.5" 
-          radius-inner="0.8" 
-          radius-outer="0.82" 
-          color="#37474f" 
-          opacity="0.05"
-          animation="property: scale; to: 1.5 1.5 1.5; dur: 8000; easing: easeOutQuart; loop: true">
-        </a-ring>
+        <a-light type="ambient" color="#665544" intensity="0.7"></a-light>
+        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="1.0"></a-light>
+
       </a-entity>
       
     </a-scene>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', () => {
         const startScreen = document.getElementById('startScreen');
         const startButton = document.getElementById('startButton');
-        const scene = document.querySelector('a-scene');
-        
-        // 稳定系统参数
-        const stabilizer = {
-          positionHistory: [],
-          rotationHistory: [],
-          maxHistory: 5,
-          smoothFactor: 0.15,  // 更强的平滑
-          threshold: 0.02      // 位置变化阈值
-        };
-        
-        // 超强稳定性平滑函数
-        function ultraSmoothTransform(currentPos, currentRot) {
-          // 位置平滑
-          stabilizer.positionHistory.push({...currentPos});
-          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
-            stabilizer.positionHistory.shift();
-          }
-          
-          // 检测是否在静止状态
-          if (stabilizer.positionHistory.length >= 5) {
-            const recent = stabilizer.positionHistory.slice(-5);
-            const avgRecent = recent.reduce((acc, pos) => ({
-              x: acc.x + pos.x / 5,
-              y: acc.y + pos.y / 5,
-              z: acc.z + pos.z / 5
-            }), {x: 0, y: 0, z: 0});
-            
-            const maxDeviation = Math.max(
-              ...recent.map(pos => Math.sqrt(
-                Math.pow(pos.x - avgRecent.x, 2) +
-                Math.pow(pos.y - avgRecent.y, 2) +
-                Math.pow(pos.z - avgRecent.z, 2)
-              ))
-            );
-            
-            // 判断是否为静止状态
-            if (maxDeviation < stabilizer.staticThreshold) {
-              stabilizer.staticFrames++;
-              if (stabilizer.staticFrames > 8) { // 连续8帧静止
-                stabilizer.isStatic = true;
-                if (!stabilizer.lockPosition) {
-                  stabilizer.lockPosition = {...avgRecent};
-                }
-                return { position: stabilizer.lockPosition, rotation: currentRot };
-              }
-            } else {
-              stabilizer.staticFrames = 0;
-              stabilizer.isStatic = false;
-              stabilizer.lockPosition = null;
-            }
-          }
-          
-          // 如果不是静止状态，使用加权平滑
-          let totalWeight = 0;
-          const avgPos = { x: 0, y: 0, z: 0 };
-          
-          // 指数权重：越新的帧权重越大
-          stabilizer.positionHistory.forEach((pos, index) => {
-            const weight = Math.pow(1.5, index); // 指数增长权重
-            avgPos.x += pos.x * weight;
-            avgPos.y += pos.y * weight;
-            avgPos.z += pos.z * weight;
-            totalWeight += weight;
-          });
-          
-          const smoothedPos = {
-            x: avgPos.x / totalWeight,
-            y: avgPos.y / totalWeight,
-            z: avgPos.z / totalWeight
-          };
-          
-          return { position: smoothedPos, rotation: currentRot };
-        }
-        
-        // 初始隐藏场景
-        scene.style.display = 'none';
-        
-        // 启动按钮点击事件
-        startButton.addEventListener('click', async function() {
-          try {
-            startScreen.style.display = 'none';
-            scene.style.display = 'block';
-            
-            await new Promise(resolve => {
-              if (scene.hasLoaded) {
-                resolve();
-              } else {
-                scene.addEventListener('loaded', resolve);
-              }
-            });
-            
-            console.log('AR 佛像场景已启动');
-            
-            // 启动稳定系统
-            setupStabilization();
-            
-          } catch (error) {
-            console.error('启动AR失败:', error);
-            alert('启动AR失败，请检查摄像头权限并刷新页面重试');
-            startScreen.style.display = 'flex';
-            scene.style.display = 'none';
-          }
-        });
-        
-        // 设置稳定系统
-        function setupStabilization() {
-          const targetEntity = document.querySelector('[mindar-image-target]');
-          const model = document.querySelector('#mainModel');
-          
-          if (targetEntity && model) {
-            let lastPosition = { x: 0, y: 0, z: 0 };
-            let lastRotation = { x: 0, y: 0, z: 0 };
-            const debugInfo = document.getElementById('debugInfo');
-        let isLarge = false; // 全局变量跟踪模型大小状态
-        let isTracking = false; // 追踪状态
-        
-        // 页面加载后立即设置按钮功能
+        const scene = document.getElementById('ar-scene');
         const zoomButton = document.getElementById('zoomButton');
-        if (zoomButton) {
-          console.log('页面加载时设置按钮事件');
-          debugInfo.innerHTML = '状态: 按钮已就绪<br>🌟 准备佛光觉醒体验';
-          
-          // 立即绑定按钮事件
-          setupZoomButton();
-        }
-        
-        function setupZoomButton() {
-          const zoomButton = document.getElementById('zoomButton');
-          if (!zoomButton) return;
-          
-          // 移除可能存在的旧事件监听器
-          const newButton = zoomButton.cloneNode(true);
-          zoomButton.parentNode.replaceChild(newButton, zoomButton);
-          
-          // 添加新的事件监听器
-          newButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('按钮被点击了！');
-            debugInfo.innerHTML = '状态: 按钮点击检测到✅';
-            toggleModelSize();
-          });
-          
-          newButton.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('按钮被触摸了！');
-            debugInfo.innerHTML = '状态: 触摸检测到✅';
-            toggleModelSize();
-          });
-          
-          // 视觉反馈
-          newButton.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            this.style.transform = 'translateX(-50%) scale(0.95)';
-            this.style.transition = 'transform 0.1s';
-            debugInfo.innerHTML = '状态: 按钮按下中...';
-          });
-          
-          newButton.addEventListener('touchend', function(e) {
-            this.style.transform = 'translateX(-50%) scale(1)';
-          });
-          
-          newButton.addEventListener('mousedown', function(e) {
-            e.preventDefault();
-            this.style.transform = 'translateX(-50%) scale(0.95)';
-            debugInfo.innerHTML = '状态: 鼠标按下';
-          });
-          
-          newButton.addEventListener('mouseup', function() {
-            this.style.transform = 'translateX(-50%) scale(1)';
-          });
-          
-          console.log('按钮事件已绑定');
-        }
-        
+        const anchor = document.getElementById('ar-anchor');
+        const model = document.getElementById('mainModel');
+        const buddhaRay = document.getElementById('buddhaRay');
+
+        let isLarge = false; // 跟踪模型大小状态
+
+        // 1. 启动AR体验
+        startButton.addEventListener('click', () => {
+          startScreen.style.display = 'none';
+          scene.style.display = 'block';
+        });
+
+        // 2. 监听目标识别事件来控制显现动画
+        anchor.addEventListener("targetFound", event => {
+          console.log("识别目标找到 - 启动登场动画");
+          anchor.setAttribute('visible', 'true');
+          zoomButton.style.display = 'block'; // 显示缩放按钮
+
+          // 启用并触发自定义的登场动画事件
+          model.setAttribute('animation__fadein', 'enabled', true);
+          buddhaRay.setAttribute('animation', 'enabled', true);
+          model.emit('model-appear');
+          buddhaRay.emit('model-appear');
+        });
+
+        // 3. 监听目标丢失事件来隐藏所有内容
+        anchor.addEventListener("targetLost", event => {
+          console.log("识别目标丢失 - 隐藏实体");
+          anchor.setAttribute('visible', 'false');
+          zoomButton.style.display = 'none'; // 隐藏缩放按钮
+
+          // 重置动画状态，以便下次能重新播放
+          // 禁用动画可以防止在隐藏状态下意外触发
+          model.setAttribute('animation__fadein', 'enabled', false);
+          buddhaRay.setAttribute('animation', 'enabled', false);
+          // 将属性重置为初始值
+          model.setAttribute('material', 'opacity', 0);
+          buddhaRay.setAttribute('light', 'intensity', 0);
+        });
+
+        // 4. 缩放按钮逻辑
+        zoomButton.addEventListener('click', () => {
+          toggleModelSize();
+        });
+
         function toggleModelSize() {
-          console.log('开始切换模型大小，当前状态:', isLarge);
-          
-          // 首先确保场景已启动
-          if (scene.style.display === 'none') {
-            debugInfo.innerHTML = '状态: 请先点击启动AR体验';
-            return;
-          }
-          
-          const model = document.querySelector('#mainModel');
-          if (!model) {
-            debugInfo.innerHTML = '状态: 模型未找到，请稍等...';
-            console.log('模型未找到');
-            return;
-          }
-          
-          // 检查模型是否准备就绪
-          const currentScale = model.getAttribute('scale');
-          if (!model.getAttribute('visible') || (currentScale && currentScale.x < 0.5)) {
-            debugInfo.innerHTML = '状态: 模型还在加载中，请稍等...';
-            
-            // 强制显示模型
-            model.setAttribute('visible', true);
-            model.setAttribute('scale', '0.8 0.8 0.8');
-            
-            setTimeout(() => {
-              debugInfo.innerHTML = '状态: ✅ 模型已就绪，可以使用按钮';
-            }, 1000);
-            return;
-          }
-          
-          debugInfo.innerHTML = `状态: ${isLarge ? '缩小' : '放大'}佛像中...`;
-          
+          if (!anchor.getAttribute('visible')) return; // 如果目标未识别，不执行任何操作
+
           if (!isLarge) {
             // 放大模型
             model.setAttribute('animation__scale', {
@@ -373,56 +140,13 @@
               dur: 1500,
               easing: 'easeOutBack'
             });
-            
             // 停止悬浮动画，固定在高位
-            model.removeAttribute('animation');
+            model.setAttribute('animation', 'enabled', false);
             model.setAttribute('position', '0 0 0.4');
-            
-            // 增强所有光效
-            const lightRig = document.querySelector('#lightRig');
-            if (lightRig) {
-              const lights = lightRig.querySelectorAll('a-light');
-              lights.forEach(light => {
-                const currentIntensity = parseFloat(light.getAttribute('light')?.intensity) || 2.5;
-                light.setAttribute('animation__brighten', {
-                  property: 'light.intensity',
-                  to: currentIntensity * 2.0,
-                  dur: 1500
-                });
-              });
-            }
-            
-            // 增强天光
-            const heavenLight = document.querySelector('#heavenLight');
-            if (heavenLight) {
-              heavenLight.setAttribute('animation__intensify', {
-                property: 'light.intensity',
-                to: '8.0',
-                dur: 1500,
-                easing: 'easeOutQuad'
-              });
-            }
-            
-            // 光环增强
-            const halo = document.querySelector('#halo');
-            if (halo) {
-              halo.setAttribute('animation__glow', {
-                property: 'opacity',
-                to: '1.0',
-                dur: 1500
-              });
-            }
-            
             // 更新按钮
-            const zoomButton = document.getElementById('zoomButton');
-            zoomButton.innerHTML = '🔍 缩小佛像';
+            zoomButton.innerHTML = '✨ 缩小佛像';
             zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
-            
             isLarge = true;
-            setTimeout(() => {
-              debugInfo.innerHTML = '状态: 佛像已放大✨<br>🌟 光明增强！';
-            }, 1500);
-            console.log('模型已放大到1.8倍，特效增强');
           } else {
             // 恢复原始大小
             model.setAttribute('animation__scale', {
@@ -431,122 +155,13 @@
               dur: 1200,
               easing: 'easeInOutQuad'
             });
-            
             // 恢复悬浮动画
-            model.setAttribute('animation', {
-              property: 'position',
-              to: '0 0 0.15',
-              dur: 5000,
-              easing: 'easeInOutSine',
-              loop: true,
-              dir: 'alternate'
-            });
-            
-            // 恢复光效
-            const lightRig = document.querySelector('#lightRig');
-            if (lightRig) {
-              const lights = lightRig.querySelectorAll('a-light');
-              lights.forEach(light => {
-                const currentIntensity = parseFloat(light.getAttribute('light')?.intensity) || 2.5;
-                light.setAttribute('animation__dim', {
-                  property: 'light.intensity',
-                  to: currentIntensity / 2.0,
-                  dur: 1200
-                });
-              });
-            }
-            
-            // 恢复天光
-            const heavenLight = document.querySelector('#heavenLight');
-            if (heavenLight) {
-              heavenLight.setAttribute('animation__restore', {
-                property: 'light.intensity',
-                to: '3.0',
-                dur: 1200
-              });
-            }
-            
-            // 恢复光环
-            const halo = document.querySelector('#halo');
-            if (halo) {
-              halo.setAttribute('animation__restore', {
-                property: 'opacity',
-                to: '0.7',
-                dur: 1200
-              });
-            }
-            
-            // 恢复按钮
-            const zoomButton = document.getElementById('zoomButton');
+            model.setAttribute('animation', 'enabled', true);
+            // 更新按钮
             zoomButton.innerHTML = '🔍 放大佛像';
             zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
-            
             isLarge = false;
-            setTimeout(() => {
-              debugInfo.innerHTML = '状态: 佛像已缩小<br>🙏 宁静致远';
-            }, 1200);
-            console.log('模型已恢复原始大小');
           }
-        }
-            
-            // 目标检测事件
-            targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示佛像模型');
-              isTracking = true;
-              
-              // 重置历史记录，避免突然跳跃
-              stabilizer.positionHistory = [];
-              stabilizer.rotationHistory = [];
-            });
-            
-            targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏佛像模型');
-              isTracking = false;
-            });
-            
-            // 实时稳定更新
-            setInterval(() => {
-              if (isTracking) {
-                const currentPos = targetEntity.getAttribute('position') || lastPosition;
-                const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
-                
-                // 检查变化是否足够大
-                const positionDiff = Math.sqrt(
-                  Math.pow(currentPos.x - lastPosition.x, 2) +
-                  Math.pow(currentPos.y - lastPosition.y, 2) +
-                  Math.pow(currentPos.z - lastPosition.z, 2)
-                );
-                
-                if (positionDiff > stabilizer.threshold) {
-                  const smoothed = smoothTransform(currentPos, currentRot);
-                  
-                  // 应用平滑后的变换
-                  lastPosition = smoothed.position;
-                  lastRotation = smoothed.rotation;
-                  
-                  // 更新模型位置（保持相对偏移）
-                  model.setAttribute('position', {
-                    x: smoothed.position.x,
-                    y: smoothed.position.y,
-                    z: smoothed.position.z + 0.1  // 保持在识别图上方
-                  });
-                }
-              }
-            }, 16); // 约60fps
-          }
-        }
-        
-        // 监听模型加载状态
-        const model = document.querySelector('#mainModel');
-        
-        if (model) {
-          model.addEventListener('model-loaded', function() {
-            console.log('佛像模型加载完成');
-          });
-          
-          model.addEventListener('model-error', function(event) {
-            console.error('佛像模型加载失败:', event.detail);
-          });
         }
       });
     </script>
