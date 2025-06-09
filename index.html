@@ -8,8 +8,8 @@
     <!-- 启动界面 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
-        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🗾 李白 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D李白</p>
+        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -35,67 +35,74 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- 李白3D模型 -->
-        <a-asset-item id="japanMapModel" src="./gufenglibai.glb"></a-asset-item>
+        <!-- 佛像3D模型 -->
+        <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 李白3D模型 - 悬浮在识别图上方 -->
+        <!-- 佛像3D模型 - 大幅放大显示 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
-          position="0 0 0.2" 
-          scale="0.1 0.1 0.1" 
-          src="#japanMapModel" 
-          animation="property: position; to: 0 0 0.3; dur: 3000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 12000; easing: linear; loop: true">
+          position="0 0 0.1" 
+          scale="0.5 0.5 0.5" 
+          src="#buddhistModel" 
+          animation="property: position; to: 0 0 0.2; dur: 3000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true">
         </a-gltf-model>
         
-        <!-- 专为地图优化的光效 -->
-        <a-light type="point" position="0 1 1" color="#ffffff" intensity="1.0"></a-light>
-        <a-light type="point" position="1 0 1" color="#e3f2fd" intensity="0.6"></a-light>
-        <a-light type="ambient" color="#303030" intensity="0.5"></a-light>
+        <!-- 佛教主题光效 -->
+        <a-light type="point" position="0 1 1" color="#ffd700" intensity="1.2"></a-light>
+        <a-light type="point" position="1 0 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#404040" intensity="0.6"></a-light>
         
-        <!-- 日本主题装饰效果 -->
+        <!-- 佛教主题装饰效果 -->
         <a-ring 
           position="0 -0.05 0" 
           rotation="-90 0 0" 
-          radius-inner="0.4" 
-          radius-outer="0.6" 
-          color="#ff6b6b" 
-          opacity="0.3"
-          animation="property: rotation; to: -90 -360 0; dur: 15000; easing: linear; loop: true">
+          radius-inner="0.3" 
+          radius-outer="0.5" 
+          color="#ffd700" 
+          opacity="0.4"
+          animation="property: rotation; to: -90 -360 0; dur: 20000; easing: linear; loop: true">
         </a-ring>
         
-        <!-- 底部发光圆盘 -->
+        <!-- 莲花座效果 -->
         <a-circle 
           position="0 -0.02 0" 
           rotation="-90 0 0" 
-          radius="0.5" 
-          color="#4fc3f7" 
-          opacity="0.25"
-          animation="property: scale; to: 1.3 1.3 1.3; dur: 2000; easing: easeInOutQuad; loop: true; dir: alternate">
+          radius="0.4" 
+          color="#ffeb3b" 
+          opacity="0.3"
+          animation="property: scale; to: 1.2 1.2 1.2; dur: 2500; easing: easeInOutQuad; loop: true; dir: alternate">
         </a-circle>
         
-        <!-- 日式粒子效果 -->
-        <a-box 
-          position="0.3 0.3 0.3" 
-          width="0.02" 
-          height="0.02" 
-          depth="0.02" 
-          color="#ffcdd2"
-          animation="property: position; to: -0.3 0.5 0.3; dur: 4000; easing: easeInOutCubic; loop: true; dir: alternate">
-        </a-box>
-        <a-box 
-          position="-0.3 0.2 0.4" 
-          width="0.015" 
-          height="0.015" 
-          depth="0.015" 
-          color="#f8bbd9"
-          animation="property: position; to: 0.3 0.4 0.2; dur: 5000; easing: easeInOutCubic; loop: true; dir: alternate">
-        </a-box>
+        <!-- 佛光效果 -->
+        <a-ring 
+          position="0 0.3 0" 
+          rotation="-90 0 0" 
+          radius-inner="0.1" 
+          radius-outer="0.25" 
+          color="#fff3e0" 
+          opacity="0.5"
+          animation="property: rotation; to: -90 360 0; dur: 12000; easing: linear; loop: true">
+        </a-ring>
+        
+        <!-- 禅意粒子效果 -->
+        <a-sphere 
+          position="0.2 0.3 0.2" 
+          radius="0.01" 
+          color="#ff9800"
+          animation="property: position; to: -0.2 0.5 0.2; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-sphere>
+        <a-sphere 
+          position="-0.2 0.2 0.3" 
+          radius="0.008" 
+          color="#ffc107"
+          animation="property: position; to: 0.2 0.4 0.1; dur: 8000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-sphere>
       </a-entity>
       
     </a-scene>
@@ -179,7 +186,7 @@
               }
             });
             
-            console.log('AR 李白场景已启动');
+            console.log('AR 佛像场景已启动');
             
             // 启动稳定系统
             setupStabilization();
@@ -204,7 +211,7 @@
             
             // 目标检测事件
             targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示李白模型');
+              console.log('识别目标找到 - 显示佛像模型');
               isTracking = true;
               
               // 重置历史记录，避免突然跳跃
@@ -213,7 +220,7 @@
             });
             
             targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏李白模型');
+              console.log('识别目标丢失 - 隐藏佛像模型');
               isTracking = false;
             });
             
@@ -254,11 +261,11 @@
         
         if (model) {
           model.addEventListener('model-loaded', function() {
-            console.log('李白模型加载完成');
+            console.log('日本地图模型加载完成');
           });
           
           model.addEventListener('model-error', function(event) {
-            console.error('李白模型加载失败:', event.detail);
+            console.error('日本地图模型加载失败:', event.detail);
           });
         }
       });
