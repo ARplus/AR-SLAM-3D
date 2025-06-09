@@ -10,7 +10,7 @@
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
         <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后点击模型可放大观看</p>
+        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后使用屏幕按钮放大观看</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -30,7 +30,12 @@
 
     <!-- 提示文字 -->
     <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 14px;">
-      👆 点击佛像可以放大查看
+      👆 点击下方按钮可以放大佛像
+    </div>
+
+    <!-- 放大按钮 -->
+    <div id="zoomButton" style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 15px 25px; border-radius: 25px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; user-select: none;">
+      🔍 放大佛像
     </div>
 
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
@@ -38,9 +43,7 @@
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false"
-             loading-screen="enabled: false"
-             cursor="rayOrigin: mouse"
-             raycaster="objects: .clickable">
+             loading-screen="enabled: false">
       
       <a-assets>
         <!-- 佛像3D模型 -->
@@ -50,7 +53,7 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 佛像3D模型 - 增强稳定性 -->
+        <!-- 佛像3D模型 - 超强稳定性 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
@@ -58,8 +61,7 @@
           scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
           animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true"
-          class="clickable">
+          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true">
         </a-gltf-model>
         
         <!-- 洞窟光效系统 - 增强亮度 -->
@@ -110,25 +112,55 @@
           threshold: 0.02      // 位置变化阈值
         };
         
-        // 改进的平滑函数
-        function smoothTransform(currentPos, currentRot) {
+        // 超强稳定性平滑函数
+        function ultraSmoothTransform(currentPos, currentRot) {
           // 位置平滑
           stabilizer.positionHistory.push({...currentPos});
           if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
             stabilizer.positionHistory.shift();
           }
           
-          // 旋转平滑
-          stabilizer.rotationHistory.push({...currentRot});
-          if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
-            stabilizer.rotationHistory.shift();
+          // 检测是否在静止状态
+          if (stabilizer.positionHistory.length >= 5) {
+            const recent = stabilizer.positionHistory.slice(-5);
+            const avgRecent = recent.reduce((acc, pos) => ({
+              x: acc.x + pos.x / 5,
+              y: acc.y + pos.y / 5,
+              z: acc.z + pos.z / 5
+            }), {x: 0, y: 0, z: 0});
+            
+            const maxDeviation = Math.max(
+              ...recent.map(pos => Math.sqrt(
+                Math.pow(pos.x - avgRecent.x, 2) +
+                Math.pow(pos.y - avgRecent.y, 2) +
+                Math.pow(pos.z - avgRecent.z, 2)
+              ))
+            );
+            
+            // 判断是否为静止状态
+            if (maxDeviation < stabilizer.staticThreshold) {
+              stabilizer.staticFrames++;
+              if (stabilizer.staticFrames > 8) { // 连续8帧静止
+                stabilizer.isStatic = true;
+                if (!stabilizer.lockPosition) {
+                  stabilizer.lockPosition = {...avgRecent};
+                }
+                return { position: stabilizer.lockPosition, rotation: currentRot };
+              }
+            } else {
+              stabilizer.staticFrames = 0;
+              stabilizer.isStatic = false;
+              stabilizer.lockPosition = null;
+            }
           }
           
-          // 计算加权平均位置（近期权重更大）
+          // 如果不是静止状态，使用加权平滑
           let totalWeight = 0;
           const avgPos = { x: 0, y: 0, z: 0 };
+          
+          // 指数权重：越新的帧权重越大
           stabilizer.positionHistory.forEach((pos, index) => {
-            const weight = index + 1; // 越新的权重越大
+            const weight = Math.pow(1.5, index); // 指数增长权重
             avgPos.x += pos.x * weight;
             avgPos.y += pos.y * weight;
             avgPos.z += pos.z * weight;
@@ -141,24 +173,7 @@
             z: avgPos.z / totalWeight
           };
           
-          // 计算加权平均旋转
-          totalWeight = 0;
-          const avgRot = { x: 0, y: 0, z: 0 };
-          stabilizer.rotationHistory.forEach((rot, index) => {
-            const weight = index + 1;
-            avgRot.x += rot.x * weight;
-            avgRot.y += rot.y * weight;
-            avgRot.z += rot.z * weight;
-            totalWeight += weight;
-          });
-          
-          const smoothedRot = {
-            x: avgRot.x / totalWeight,
-            y: avgRot.y / totalWeight,
-            z: avgRot.z / totalWeight
-          };
-          
-          return { position: smoothedPos, rotation: smoothedRot };
+          return { position: smoothedPos, rotation: currentRot };
         }
         
         // 初始隐藏场景
