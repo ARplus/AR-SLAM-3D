@@ -219,7 +219,170 @@
           if (targetEntity && model) {
             let lastPosition = { x: 0, y: 0, z: 0 };
             let lastRotation = { x: 0, y: 0, z: 0 };
-            let isTracking = false;
+            const debugInfo = document.getElementById('debugInfo');
+        let isLarge = false; // 全局变量跟踪模型大小状态
+        let isTracking = false; // 追踪状态
+        
+        // 页面加载后立即设置按钮功能
+        const zoomButton = document.getElementById('zoomButton');
+        if (zoomButton) {
+          console.log('页面加载时设置按钮事件');
+          debugInfo.innerHTML = '状态: 按钮已就绪<br>👆先点击"开始AR体验"';
+          
+          // 立即绑定按钮事件
+          setupZoomButton();
+        }
+        
+        function setupZoomButton() {
+          const zoomButton = document.getElementById('zoomButton');
+          if (!zoomButton) return;
+          
+          // 移除可能存在的旧事件监听器
+          const newButton = zoomButton.cloneNode(true);
+          zoomButton.parentNode.replaceChild(newButton, zoomButton);
+          
+          // 添加新的事件监听器
+          newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('按钮被点击了！');
+            debugInfo.innerHTML = '状态: 按钮点击检测到✅';
+            toggleModelSize();
+          });
+          
+          newButton.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('按钮被触摸了！');
+            debugInfo.innerHTML = '状态: 触摸检测到✅';
+            toggleModelSize();
+          });
+          
+          // 视觉反馈
+          newButton.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            this.style.transform = 'translateX(-50%) scale(0.95)';
+            this.style.transition = 'transform 0.1s';
+            debugInfo.innerHTML = '状态: 按钮按下中...';
+          });
+          
+          newButton.addEventListener('touchend', function(e) {
+            this.style.transform = 'translateX(-50%) scale(1)';
+          });
+          
+          newButton.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            this.style.transform = 'translateX(-50%) scale(0.95)';
+            debugInfo.innerHTML = '状态: 鼠标按下';
+          });
+          
+          newButton.addEventListener('mouseup', function() {
+            this.style.transform = 'translateX(-50%) scale(1)';
+          });
+          
+          console.log('按钮事件已绑定');
+        }
+        
+        function toggleModelSize() {
+          console.log('开始切换模型大小，当前状态:', isLarge);
+          
+          // 首先确保场景已启动
+          if (scene.style.display === 'none') {
+            debugInfo.innerHTML = '状态: 请先点击启动AR体验';
+            return;
+          }
+          
+          const model = document.querySelector('#mainModel');
+          if (!model) {
+            debugInfo.innerHTML = '状态: 模型未找到，请稍等...';
+            console.log('模型未找到');
+            return;
+          }
+          
+          debugInfo.innerHTML = `状态: ${isLarge ? '缩小' : '放大'}佛像中...`;
+          
+          if (!isLarge) {
+            // 放大模型
+            model.setAttribute('animation__scale', {
+              property: 'scale',
+              to: '1.8 1.8 1.8',
+              dur: 1500,
+              easing: 'easeOutBack'
+            });
+            
+            // 停止悬浮动画，固定在高位
+            model.removeAttribute('animation');
+            model.setAttribute('position', '0 0 0.4');
+            
+            // 增强光效
+            const lightRig = document.querySelector('#lightRig');
+            if (lightRig) {
+              const lights = lightRig.querySelectorAll('a-light');
+              lights.forEach(light => {
+                const currentIntensity = light.getAttribute('light').intensity || 2.0;
+                light.setAttribute('animation__brighten', {
+                  property: 'light.intensity',
+                  to: currentIntensity * 2.5,
+                  dur: 1500
+                });
+              });
+            }
+            
+            // 更新按钮
+            const zoomButton = document.getElementById('zoomButton');
+            zoomButton.innerHTML = '🔍 缩小佛像';
+            zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
+            
+            isLarge = true;
+            setTimeout(() => {
+              debugInfo.innerHTML = '状态: 佛像已放大✨<br>点击可缩小';
+            }, 1500);
+            console.log('模型已放大到1.8倍');
+          } else {
+            // 恢复原始大小
+            model.setAttribute('animation__scale', {
+              property: 'scale',
+              to: '0.8 0.8 0.8',
+              dur: 1200,
+              easing: 'easeInOutQuad'
+            });
+            
+            // 恢复悬浮动画
+            model.setAttribute('animation', {
+              property: 'position',
+              to: '0 0 0.15',
+              dur: 5000,
+              easing: 'easeInOutSine',
+              loop: true,
+              dir: 'alternate'
+            });
+            
+            // 恢复光效
+            const lightRig = document.querySelector('#lightRig');
+            if (lightRig) {
+              const lights = lightRig.querySelectorAll('a-light');
+              lights.forEach(light => {
+                const currentIntensity = light.getAttribute('light').intensity || 2.0;
+                light.setAttribute('animation__dim', {
+                  property: 'light.intensity',
+                  to: currentIntensity / 2.5,
+                  dur: 1200
+                });
+              });
+            }
+            
+            // 恢复按钮
+            const zoomButton = document.getElementById('zoomButton');
+            zoomButton.innerHTML = '🔍 放大佛像';
+            zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
+            
+            isLarge = false;
+            setTimeout(() => {
+              debugInfo.innerHTML = '状态: 佛像已缩小<br>点击可放大';
+            }, 1200);
+            console.log('模型已恢复原始大小');
+          }
+        }
             
             // 目标检测事件
             targetEntity.addEventListener('targetFound', function() {
