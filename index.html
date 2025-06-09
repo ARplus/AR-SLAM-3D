@@ -42,12 +42,12 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 佛像3D模型 - 自带发光效果 -->
+        <!-- 佛像3D模型 - 进一步放大 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
           position="0 0 0.1" 
-          scale="0.5 0.5 0.5" 
+          scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
           animation="property: position; to: 0 0 0.2; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate"
           animation__rotation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
@@ -68,54 +68,80 @@
         <!-- 洞窟入口光线 -->
         <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="0.8"></a-light>
         
-        <!-- 洞窟石壁效果 -->
-        <a-cylinder 
-          position="0 0 -0.5" 
+        <!-- 云雾缭绕效果 - 多层云雾围绕洞窟 -->
+        <!-- 第一层云雾 -->
+        <a-torus 
+          position="0 0 -0.2" 
+          radius="0.8" 
+          radius-tubular="0.15" 
+          color="#9e9e9e" 
+          opacity="0.2"
+          animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
+          animation__scale="property: scale; to: 1.2 1.2 1.2; dur: 8000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-torus>
+        
+        <!-- 第二层云雾 -->
+        <a-torus 
+          position="0 0.1 -0.3" 
+          radius="1.0" 
+          radius-tubular="0.12" 
+          color="#bdbdbd" 
+          opacity="0.15"
+          animation="property: rotation; to: 0 -360 0; dur: 25000; easing: linear; loop: true"
+          animation__opacity="property: opacity; to: 0.3; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-torus>
+        
+        <!-- 第三层云雾 -->
+        <a-torus 
+          position="0 -0.05 -0.1" 
+          radius="0.6" 
+          radius-tubular="0.18" 
+          color="#757575" 
+          opacity="0.25"
+          animation="property: rotation; to: 0 180 0; dur: 35000; easing: linear; loop: true"
+          animation__position="property: position; to: 0 0.05 -0.1; dur: 7000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-torus>
+        
+        <!-- 第四层云雾 -->
+        <a-torus 
+          position="0 0.15 -0.4" 
           radius="1.2" 
-          height="0.1" 
-          color="#3e2723" 
-          opacity="0.6"
-          rotation="0 0 0">
+          radius-tubular="0.1" 
+          color="#616161" 
+          opacity="0.1"
+          animation="property: rotation; to: 0 360 0; dur: 40000; easing: linear; loop: true">
+        </a-torus>
+        
+        <!-- 香烟缭绕效果 -->
+        <a-cylinder 
+          position="0.3 -0.1 0.05" 
+          radius="0.08" 
+          height="0.3" 
+          color="#90a4ae" 
+          opacity="0.15"
+          animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true"
+          animation__scale="property: scale; to: 1.5 1.2 1.5; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate">
         </a-cylinder>
         
-        <!-- 洞窟壁画光斑 -->
-        <a-circle 
-          position="0.4 0.2 -0.3" 
-          radius="0.15" 
-          color="#bf360c" 
-          opacity="0.4"
-          animation="property: opacity; to: 0.7; dur: 3000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-circle>
+        <a-cylinder 
+          position="-0.25 -0.08 0.03" 
+          radius="0.06" 
+          height="0.25" 
+          color="#b0bec5" 
+          opacity="0.12"
+          animation="property: rotation; to: 0 -360 0; dur: 18000; easing: linear; loop: true"
+          animation__position="property: position; to: -0.25 0.1 0.03; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
+        </a-cylinder>
         
-        <a-circle 
-          position="-0.3 0.3 -0.4" 
-          radius="0.12" 
-          color="#d84315" 
-          opacity="0.3"
-          animation="property: opacity; to: 0.6; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-circle>
-        
-        <!-- 神秘烟雾效果 -->
-        <a-box 
-          position="0.2 -0.1 0.1" 
-          width="0.3" 
-          height="0.05" 
-          depth="0.3" 
-          color="#757575" 
-          opacity="0.2"
-          animation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true"
-          animation__scale="property: scale; to: 1.3 1 1.3; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-box>
-        
-        <!-- 洞窟回音视觉化 -->
-        <a-torus 
-          position="0 0 0" 
-          radius="0.8" 
-          radius-tubular="0.02" 
-          color="#424242" 
-          opacity="0.1"
-          animation="property: scale; to: 1.5 1.5 1.5; dur: 6000; easing: easeOutQuart; loop: true">
-        </a-torus>
+        <!-- 洞窟回音可视化 -->
+        <a-ring 
+          position="0 0 -0.5" 
+          radius-inner="0.5" 
+          radius-outer="0.52" 
+          color="#37474f" 
+          opacity="0.08"
+          animation="property: scale; to: 2 2 2; dur: 8000; easing: easeOutQuart; loop: true">
+        </a-ring>
       </a-entity>
       
     </a-scene>
