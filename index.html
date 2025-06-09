@@ -10,6 +10,7 @@
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
         <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
+        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后可点击模型放大</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -27,12 +28,19 @@
       </div>
     </div>
 
+    <!-- 提示文字 -->
+    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 14px;">
+      👆 点击佛像可以放大查看
+    </div>
+
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false"
-             loading-screen="enabled: false">
+             loading-screen="enabled: false"
+             cursor="rayOrigin: mouse"
+             raycaster="objects: .clickable">
       
       <a-assets>
         <!-- 佛像3D模型 -->
@@ -42,7 +50,7 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 佛像3D模型 - 进一步放大 -->
+        <!-- 佛像3D模型 - 可点击放大 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
@@ -50,7 +58,8 @@
           scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
           animation="property: position; to: 0 0 0.2; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
+          animation__rotation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true"
+          class="clickable">
         </a-gltf-model>
         
         <!-- 洞窟光效系统 -->
@@ -68,79 +77,14 @@
         <!-- 洞窟入口光线 -->
         <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="0.8"></a-light>
         
-        <!-- 云雾缭绕效果 - 多层云雾围绕洞窟 -->
-        <!-- 第一层云雾 -->
-        <a-torus 
-          position="0 0 -0.2" 
-          radius="0.8" 
-          radius-tubular="0.15" 
-          color="#9e9e9e" 
-          opacity="0.2"
-          animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true"
-          animation__scale="property: scale; to: 1.2 1.2 1.2; dur: 8000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-torus>
-        
-        <!-- 第二层云雾 -->
-        <a-torus 
-          position="0 0.1 -0.3" 
-          radius="1.0" 
-          radius-tubular="0.12" 
-          color="#bdbdbd" 
-          opacity="0.15"
-          animation="property: rotation; to: 0 -360 0; dur: 25000; easing: linear; loop: true"
-          animation__opacity="property: opacity; to: 0.3; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-torus>
-        
-        <!-- 第三层云雾 -->
-        <a-torus 
-          position="0 -0.05 -0.1" 
-          radius="0.6" 
-          radius-tubular="0.18" 
-          color="#757575" 
-          opacity="0.25"
-          animation="property: rotation; to: 0 180 0; dur: 35000; easing: linear; loop: true"
-          animation__position="property: position; to: 0 0.05 -0.1; dur: 7000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-torus>
-        
-        <!-- 第四层云雾 -->
-        <a-torus 
-          position="0 0.15 -0.4" 
-          radius="1.2" 
-          radius-tubular="0.1" 
-          color="#616161" 
-          opacity="0.1"
-          animation="property: rotation; to: 0 360 0; dur: 40000; easing: linear; loop: true">
-        </a-torus>
-        
-        <!-- 香烟缭绕效果 -->
-        <a-cylinder 
-          position="0.3 -0.1 0.05" 
-          radius="0.08" 
-          height="0.3" 
-          color="#90a4ae" 
-          opacity="0.15"
-          animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true"
-          animation__scale="property: scale; to: 1.5 1.2 1.5; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-cylinder>
-        
-        <a-cylinder 
-          position="-0.25 -0.08 0.03" 
-          radius="0.06" 
-          height="0.25" 
-          color="#b0bec5" 
-          opacity="0.12"
-          animation="property: rotation; to: 0 -360 0; dur: 18000; easing: linear; loop: true"
-          animation__position="property: position; to: -0.25 0.1 0.03; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
-        </a-cylinder>
-        
-        <!-- 洞窟回音可视化 -->
+        <!-- 简单的洞窟回音效果 -->
         <a-ring 
           position="0 0 -0.5" 
-          radius-inner="0.5" 
-          radius-outer="0.52" 
+          radius-inner="0.8" 
+          radius-outer="0.82" 
           color="#37474f" 
-          opacity="0.08"
-          animation="property: scale; to: 2 2 2; dur: 8000; easing: easeOutQuart; loop: true">
+          opacity="0.05"
+          animation="property: scale; to: 1.5 1.5 1.5; dur: 8000; easing: easeOutQuart; loop: true">
         </a-ring>
       </a-entity>
       
