@@ -348,10 +348,18 @@
             return;
           }
           
-          // 如果模型还在播放开场动画，稍等一下
-          if (!model.getAttribute('visible')) {
-            debugInfo.innerHTML = '状态: 开场动画进行中，请稍等...';
-            setTimeout(() => toggleModelSize(), 1000);
+          // 检查模型是否准备就绪
+          const currentScale = model.getAttribute('scale');
+          if (!model.getAttribute('visible') || (currentScale && currentScale.x < 0.5)) {
+            debugInfo.innerHTML = '状态: 模型还在加载中，请稍等...';
+            
+            // 强制显示模型
+            model.setAttribute('visible', true);
+            model.setAttribute('scale', '0.8 0.8 0.8');
+            
+            setTimeout(() => {
+              debugInfo.innerHTML = '状态: ✅ 模型已就绪，可以使用按钮';
+            }, 1000);
             return;
           }
           
@@ -375,10 +383,10 @@
             if (lightRig) {
               const lights = lightRig.querySelectorAll('a-light');
               lights.forEach(light => {
-                const currentIntensity = light.getAttribute('light').intensity || 2.5;
+                const currentIntensity = parseFloat(light.getAttribute('light')?.intensity) || 2.5;
                 light.setAttribute('animation__brighten', {
                   property: 'light.intensity',
-                  to: currentIntensity * 2.5,
+                  to: currentIntensity * 2.0,
                   dur: 1500
                 });
               });
@@ -389,7 +397,7 @@
             if (heavenLight) {
               heavenLight.setAttribute('animation__intensify', {
                 property: 'light.intensity',
-                to: '12.0',
+                to: '8.0',
                 dur: 1500,
                 easing: 'easeOutQuad'
               });
@@ -404,17 +412,6 @@
                 dur: 1500
               });
             }
-            
-            // 粒子增强
-            const particles = document.querySelectorAll('.particle');
-            particles.forEach(particle => {
-              particle.setAttribute('animation__brighten', {
-                property: 'scale',
-                to: '2 2 2',
-                dur: 1500,
-                easing: 'easeOutBack'
-              });
-            });
             
             // 更新按钮
             const zoomButton = document.getElementById('zoomButton');
@@ -450,10 +447,10 @@
             if (lightRig) {
               const lights = lightRig.querySelectorAll('a-light');
               lights.forEach(light => {
-                const currentIntensity = light.getAttribute('light').intensity || 2.5;
+                const currentIntensity = parseFloat(light.getAttribute('light')?.intensity) || 2.5;
                 light.setAttribute('animation__dim', {
                   property: 'light.intensity',
-                  to: currentIntensity / 2.5,
+                  to: currentIntensity / 2.0,
                   dur: 1200
                 });
               });
@@ -474,20 +471,10 @@
             if (halo) {
               halo.setAttribute('animation__restore', {
                 property: 'opacity',
-                to: '0.8',
+                to: '0.7',
                 dur: 1200
               });
             }
-            
-            // 恢复粒子
-            const particles = document.querySelectorAll('.particle');
-            particles.forEach(particle => {
-              particle.setAttribute('animation__restore', {
-                property: 'scale',
-                to: '1 1 1',
-                dur: 1200
-              });
-            });
             
             // 恢复按钮
             const zoomButton = document.getElementById('zoomButton');
