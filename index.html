@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>佛像 AR 体验</title>
+    <title>佛像 AR 体验【修正版】</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="UTF-8">
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      /* 添加一些基本样式让体验更沉浸 */
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
+      body { margin: 0; overflow: hidden; }
     </style>
   </head>
   <body>
@@ -54,9 +50,9 @@
           scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
           material="opacity: 0; transparent: true;"
-          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate; enabled: true;"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true; enabled: true;"
-          animation__fadein="property: material.opacity; from: 0; to: 1; dur: 2000; startEvents: model-appear; easing: easeInQuad; enabled: false;">
+          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate;"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true;"
+          animation__fadein="property: material.opacity; from: 0; to: 1; dur: 2000; startEvents: model-appear; easing: easeInQuad;">
         </a-gltf-model>
         
         <a-light id="buddhaRay"
@@ -68,7 +64,7 @@
                  distance="5"
                  position="0 1.5 0.5"
                  target="#mainModel"
-                 animation="property: intensity; from:0; to: 4.0; dur: 1800; startEvents: model-appear; easing: easeInCubic; enabled: false;">
+                 animation="property: intensity; from:0; to: 4.0; dur: 1800; startEvents: model-appear; easing: easeInCubic;">
         </a-light>
         
         <a-light type="ambient" color="#665544" intensity="0.7"></a-light>
@@ -88,76 +84,62 @@
         const model = document.getElementById('mainModel');
         const buddhaRay = document.getElementById('buddhaRay');
 
-        let isLarge = false; // 跟踪模型大小状态
+        let isLarge = false;
 
-        // 1. 启动AR体验
+        // 启动AR
         startButton.addEventListener('click', () => {
           startScreen.style.display = 'none';
           scene.style.display = 'block';
         });
 
-        // 2. 监听目标识别事件来控制显现动画
+        // 【修正2】简化 targetFound 逻辑
         anchor.addEventListener("targetFound", event => {
-          console.log("识别目标找到 - 启动登场动画");
+          console.log("识别目标找到 -> 启动登场动画");
           anchor.setAttribute('visible', 'true');
-          zoomButton.style.display = 'block'; // 显示缩放按钮
+          zoomButton.style.display = 'block';
 
-          // 启用并触发自定义的登场动画事件
-          model.setAttribute('animation__fadein', 'enabled', true);
-          buddhaRay.setAttribute('animation', 'enabled', true);
+          // 直接触发事件，因为动画已在HTML中准备就绪
           model.emit('model-appear');
           buddhaRay.emit('model-appear');
         });
 
-        // 3. 监听目标丢失事件来隐藏所有内容
+        // 【修正3】在 targetLost 中增加属性重置，确保动画可重复播放
         anchor.addEventListener("targetLost", event => {
-          console.log("识别目标丢失 - 隐藏实体");
+          console.log("识别目标丢失 -> 隐藏并重置状态");
           anchor.setAttribute('visible', 'false');
-          zoomButton.style.display = 'none'; // 隐藏缩放按钮
+          zoomButton.style.display = 'none';
 
-          // 重置动画状态，以便下次能重新播放
-          // 禁用动画可以防止在隐藏状态下意外触发
-          model.setAttribute('animation__fadein', 'enabled', false);
-          buddhaRay.setAttribute('animation', 'enabled', false);
-          // 将属性重置为初始值
+          // 关键：将动画属性重置为初始值，以便下次能重新播放
           model.setAttribute('material', 'opacity', 0);
           buddhaRay.setAttribute('light', 'intensity', 0);
         });
 
-        // 4. 缩放按钮逻辑
+        // 缩放按钮逻辑 (保持不变)
         zoomButton.addEventListener('click', () => {
           toggleModelSize();
         });
 
         function toggleModelSize() {
-          if (!anchor.getAttribute('visible')) return; // 如果目标未识别，不执行任何操作
+          if (!anchor.getAttribute('visible')) return;
+
+          const hoverAnimation = model.getAttribute('animation');
 
           if (!isLarge) {
-            // 放大模型
-            model.setAttribute('animation__scale', {
-              property: 'scale',
-              to: '1.8 1.8 1.8',
-              dur: 1500,
-              easing: 'easeOutBack'
-            });
-            // 停止悬浮动画，固定在高位
-            model.setAttribute('animation', 'enabled', false);
+            model.setAttribute('animation__scale', { property: 'scale', to: '1.8 1.8 1.8', dur: 1500, easing: 'easeOutBack' });
+            // 停止悬浮动画
+            if (hoverAnimation) {
+              model.setAttribute('animation', 'enabled', false);
+            }
             model.setAttribute('position', '0 0 0.4');
-            // 更新按钮
             zoomButton.innerHTML = '✨ 缩小佛像';
             zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
             isLarge = true;
           } else {
-            // 恢复原始大小
-            model.setAttribute('animation__scale', {
-              property: 'scale',
-              to: '0.8 0.8 0.8',
-              dur: 1200,
-              easing: 'easeInOutQuad'
-            });
+            model.setAttribute('animation__scale', { property: 'scale', to: '0.8 0.8 0.8', dur: 1200, easing: 'easeInOutQuad' });
             // 恢复悬浮动画
-            model.setAttribute('animation', 'enabled', true);
-            // 更新按钮
+            if (hoverAnimation) {
+               model.setAttribute('animation', 'enabled', true);
+            }
             zoomButton.innerHTML = '🔍 放大佛像';
             zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
             isLarge = false;
