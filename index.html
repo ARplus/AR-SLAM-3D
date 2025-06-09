@@ -10,7 +10,7 @@
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
         <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后可点击模型放大</p>
+        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后点击模型可放大观看</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -50,32 +50,37 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 佛像3D模型 - 可点击放大 -->
+        <!-- 佛像3D模型 - 增强稳定性 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
           position="0 0 0.1" 
           scale="0.8 0.8 0.8" 
           src="#buddhistModel" 
-          animation="property: position; to: 0 0 0.2; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true"
+          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true"
           class="clickable">
         </a-gltf-model>
         
-        <!-- 洞窟光效系统 -->
+        <!-- 洞窟光效系统 - 增强亮度 -->
         <!-- 主佛光 - 跟随模型旋转 -->
         <a-entity id="lightRig" 
-                  animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
-          <a-light type="point" position="0 0.3 0.3" color="#ffd700" intensity="2.0"></a-light>
-          <a-light type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="1.5" 
-                   angle="30" penumbra="0.3"></a-light>
+                  animation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true">
+          <a-light type="point" position="0 0.3 0.3" color="#ffd700" intensity="2.5"></a-light>
+          <a-light type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="2.0" 
+                   angle="45" penumbra="0.2"></a-light>
         </a-entity>
         
-        <!-- 洞窟环境光 -->
-        <a-light type="ambient" color="#2c1810" intensity="0.3"></a-light>
+        <!-- 增强环境光 -->
+        <a-light type="ambient" color="#5d4e37" intensity="0.8"></a-light>
         
-        <!-- 洞窟入口光线 -->
-        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="0.8"></a-light>
+        <!-- 多角度补光 -->
+        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="1.2"></a-light>
+        <a-light type="point" position="1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
+        <a-light type="point" position="-1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
+        
+        <!-- 底部反射光 -->
+        <a-light type="point" position="0 -0.3 0.2" color="#fff8e1" intensity="0.8"></a-light>
         
         <!-- 简单的洞窟回音效果 -->
         <a-ring 
@@ -105,48 +110,52 @@
           threshold: 0.02      // 位置变化阈值
         };
         
-        // 位置平滑函数
+        // 改进的平滑函数
         function smoothTransform(currentPos, currentRot) {
           // 位置平滑
-          stabilizer.positionHistory.push(currentPos);
+          stabilizer.positionHistory.push({...currentPos});
           if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
             stabilizer.positionHistory.shift();
           }
           
           // 旋转平滑
-          stabilizer.rotationHistory.push(currentRot);
+          stabilizer.rotationHistory.push({...currentRot});
           if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
             stabilizer.rotationHistory.shift();
           }
           
-          // 计算平均位置
+          // 计算加权平均位置（近期权重更大）
+          let totalWeight = 0;
           const avgPos = { x: 0, y: 0, z: 0 };
-          stabilizer.positionHistory.forEach(pos => {
-            avgPos.x += pos.x;
-            avgPos.y += pos.y;
-            avgPos.z += pos.z;
+          stabilizer.positionHistory.forEach((pos, index) => {
+            const weight = index + 1; // 越新的权重越大
+            avgPos.x += pos.x * weight;
+            avgPos.y += pos.y * weight;
+            avgPos.z += pos.z * weight;
+            totalWeight += weight;
           });
           
-          const posCount = stabilizer.positionHistory.length;
           const smoothedPos = {
-            x: avgPos.x / posCount,
-            y: avgPos.y / posCount,
-            z: avgPos.z / posCount
+            x: avgPos.x / totalWeight,
+            y: avgPos.y / totalWeight,
+            z: avgPos.z / totalWeight
           };
           
-          // 计算平均旋转
+          // 计算加权平均旋转
+          totalWeight = 0;
           const avgRot = { x: 0, y: 0, z: 0 };
-          stabilizer.rotationHistory.forEach(rot => {
-            avgRot.x += rot.x;
-            avgRot.y += rot.y;
-            avgRot.z += rot.z;
+          stabilizer.rotationHistory.forEach((rot, index) => {
+            const weight = index + 1;
+            avgRot.x += rot.x * weight;
+            avgRot.y += rot.y * weight;
+            avgRot.z += rot.z * weight;
+            totalWeight += weight;
           });
           
-          const rotCount = stabilizer.rotationHistory.length;
           const smoothedRot = {
-            x: avgRot.x / rotCount,
-            y: avgRot.y / rotCount,
-            z: avgRot.z / rotCount
+            x: avgRot.x / totalWeight,
+            y: avgRot.y / totalWeight,
+            z: avgRot.z / totalWeight
           };
           
           return { position: smoothedPos, rotation: smoothedRot };
