@@ -5,11 +5,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
-    <!-- 启动界面 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
-        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像</p>
+        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
+        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后使用屏幕按钮放大观看</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -27,6 +27,14 @@
       </div>
     </div>
 
+    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 14px;">
+      👆 点击下方按钮可以放大佛像
+    </div>
+
+    <div id="zoomButton" style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 15px 25px; border-radius: 25px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; user-select: none;">
+      🔍 放大佛像
+    </div>
+
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
@@ -35,175 +43,127 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- 你的FBX模型 -->
-        <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddha.fbx"></a-asset-item>
+        <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 简单的FBX模型显示 -->
-        <a-entity 
+        <a-gltf-model 
           id="mainModel"
-          fbx-loader
-          position="0 0 0" 
-          rotation="0 0 0"
-          scale="0.01 0.01 0.01"
-          visible="true">
+          rotation="0 0 0" 
+          position="0 0 0.1" 
+          scale="0.8 0.8 0.8" 
+          src="#buddhistModel" 
+          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation-mixer="clip: *; loop: repeat">
+        </a-gltf-model>
+        
+        <a-entity id="lightRig" 
+                  animation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true">
+          <a-light type="point" position="0 0.3 0.3" color="#ffd700" intensity="2.5"></a-light>
+          <a-light type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="2.0" 
+                   angle="45" penumbra="0.2"></a-light>
         </a-entity>
         
-        <!-- 基础光照 -->
-        <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-        <a-light type="directional" position="1 1 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#5d4e37" intensity="0.8"></a-light>
+        
+        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="1.2"></a-light>
+        <a-light type="point" position="1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
+        <a-light type="point" position="-1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
+        
+        <a-light type="point" position="0 -0.3 0.2" color="#fff8e1" intensity="0.8"></a-light>
+        
+        <a-ring 
+          position="0 0 -0.5" 
+          radius-inner="0.8" 
+          radius-outer="0.82" 
+          color="#37474f" 
+          opacity="0.05"
+          animation="property: scale; to: 1.5 1.5 1.5; dur: 8000; easing: easeOutQuart; loop: true">
+        </a-ring>
       </a-entity>
       
     </a-scene>
 
     <script>
-      // 专用FBX加载器组件 - 简化版
-      AFRAME.registerComponent('fbx-loader', {
-        init: function () {
-          this.loadFBXModel();
-        },
-        
-        loadFBXModel: function() {
-          const el = this.el;
-          console.log('🏯 开始加载Buddha FBX模型...');
-          
-          // 加载Three.js FBX Loader
-          this.loadThreeJS().then(() => {
-            this.loadFBX();
-          }).catch(() => {
-            console.log('❌ FBX加载器加载失败，显示占位符');
-            this.showPlaceholder();
-          });
-        },
-        
-        loadThreeJS: function() {
-          return new Promise((resolve, reject) => {
-            if (window.THREE && window.THREE.FBXLoader) {
-              resolve();
-              return;
-            }
-            
-            // 动态加载FBX加载器
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/FBXLoader.js';
-            script.onload = () => {
-              if (window.THREE && window.THREE.FBXLoader) {
-                console.log('✅ FBX Loader已加载');
-                resolve();
-              } else {
-                reject('FBX Loader初始化失败');
-              }
-            };
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        },
-        
-        loadFBX: function() {
-          const el = this.el;
-          const fbxUrl = 'https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddha.fbx';
-          
-          console.log('📥 正在下载FBX文件:', fbxUrl);
-          
-          const loader = new THREE.FBXLoader();
-          
-          loader.load(
-            fbxUrl,
-            (fbx) => {
-              console.log('🎉 Buddha FBX模型加载成功！');
-              
-              // 简单处理模型
-              fbx.scale.setScalar(1); // 保持原始比例，通过a-entity的scale调整
-              fbx.position.set(0, 0, 0);
-              
-              // 确保材质正常显示
-              fbx.traverse((child) => {
-                if (child.isMesh) {
-                  if (child.material) {
-                    if (Array.isArray(child.material)) {
-                      child.material.forEach(mat => mat.needsUpdate = true);
-                    } else {
-                      child.material.needsUpdate = true;
-                    }
-                  }
-                }
-              });
-              
-              // 添加到场景
-              el.setObject3D('mesh', fbx);
-              
-              // 检查并报告模型信息
-              this.reportModelInfo(fbx);
-              
-              console.log('✅ Buddha模型已成功显示在AR场景中');
-            },
-            (progress) => {
-              const percent = (progress.loaded / progress.total * 100);
-              console.log('📊 下载进度:', percent.toFixed(1) + '%');
-            },
-            (error) => {
-              console.error('❌ FBX加载失败:', error);
-              this.showPlaceholder();
-            }
-          );
-        },
-        
-        reportModelInfo: function(fbx) {
-          console.log('📋 Buddha模型信息:');
-          console.log('- 顶点数:', this.countVertices(fbx));
-          console.log('- 材质数:', this.countMaterials(fbx));
-          
-          if (fbx.animations && fbx.animations.length > 0) {
-            console.log('🎬 包含动画:', fbx.animations.length, '个');
-            fbx.animations.forEach((anim, index) => {
-              console.log(`  动画${index + 1}: ${anim.name || '未命名'} (${anim.duration.toFixed(2)}秒)`);
-            });
-          } else {
-            console.log('📷 静态模型（无动画）');
-          }
-        },
-        
-        countVertices: function(object) {
-          let count = 0;
-          object.traverse((child) => {
-            if (child.geometry) {
-              const positions = child.geometry.attributes.position;
-              if (positions) count += positions.count;
-            }
-          });
-          return count;
-        },
-        
-        countMaterials: function(object) {
-          const materials = new Set();
-          object.traverse((child) => {
-            if (child.material) {
-              if (Array.isArray(child.material)) {
-                child.material.forEach(mat => materials.add(mat));
-              } else {
-                materials.add(child.material);
-              }
-            }
-          });
-          return materials.size;
-        },
-        
-        showPlaceholder: function() {
-          console.log('📦 显示简单占位符...');
-          const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-          const material = new THREE.MeshBasicMaterial({color: 0xffaa00});
-          const cube = new THREE.Mesh(geometry, material);
-          this.el.setObject3D('mesh', cube);
-        }
-      });
-
       document.addEventListener('DOMContentLoaded', function() {
         const startScreen = document.getElementById('startScreen');
         const startButton = document.getElementById('startButton');
         const scene = document.querySelector('a-scene');
+        
+        // 稳定系统参数
+        const stabilizer = {
+          positionHistory: [],
+          rotationHistory: [],
+          maxHistory: 5,
+          smoothFactor: 0.15,  // 更强的平滑
+          threshold: 0.02      // 位置变化阈值
+        };
+        
+        // 超强稳定性平滑函数
+        function ultraSmoothTransform(currentPos, currentRot) {
+          // 位置平滑
+          stabilizer.positionHistory.push({...currentPos});
+          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
+            stabilizer.positionHistory.shift();
+          }
+          
+          // 检测是否在静止状态
+          if (stabilizer.positionHistory.length >= 5) {
+            const recent = stabilizer.positionHistory.slice(-5);
+            const avgRecent = recent.reduce((acc, pos) => ({
+              x: acc.x + pos.x / 5,
+              y: acc.y + pos.y / 5,
+              z: acc.z + pos.z / 5
+            }), {x: 0, y: 0, z: 0});
+            
+            const maxDeviation = Math.max(
+              ...recent.map(pos => Math.sqrt(
+                Math.pow(pos.x - avgRecent.x, 2) +
+                Math.pow(pos.y - avgRecent.y, 2) +
+                Math.pow(pos.z - avgRecent.z, 2)
+              ))
+            );
+            
+            // 判断是否为静止状态
+            if (maxDeviation < stabilizer.staticThreshold) {
+              stabilizer.staticFrames++;
+              if (stabilizer.staticFrames > 8) { // 连续8帧静止
+                stabilizer.isStatic = true;
+                if (!stabilizer.lockPosition) {
+                  stabilizer.lockPosition = {...avgRecent};
+                }
+                return { position: stabilizer.lockPosition, rotation: currentRot };
+              }
+            } else {
+              stabilizer.staticFrames = 0;
+              stabilizer.isStatic = false;
+              stabilizer.lockPosition = null;
+            }
+          }
+          
+          // 如果不是静止状态，使用加权平滑
+          let totalWeight = 0;
+          const avgPos = { x: 0, y: 0, z: 0 };
+          
+          // 指数权重：越新的帧权重越大
+          stabilizer.positionHistory.forEach((pos, index) => {
+            const weight = Math.pow(1.5, index); // 指数增长权重
+            avgPos.x += pos.x * weight;
+            avgPos.y += pos.y * weight;
+            avgPos.z += pos.z * weight;
+            totalWeight += weight;
+          });
+          
+          const smoothedPos = {
+            x: avgPos.x / totalWeight,
+            y: avgPos.y / totalWeight,
+            z: avgPos.z / totalWeight
+          };
+          
+          return { position: smoothedPos, rotation: currentRot };
+        }
         
         // 初始隐藏场景
         scene.style.display = 'none';
@@ -222,7 +182,10 @@
               }
             });
             
-            console.log('🎯 AR场景已启动，等待FBX模型加载...');
+            console.log('AR 佛像场景已启动');
+            
+            // 启动稳定系统
+            setupStabilization();
             
           } catch (error) {
             console.error('启动AR失败:', error);
@@ -232,20 +195,75 @@
           }
         });
         
-        // 监听识别状态
-        document.addEventListener('DOMContentLoaded', function() {
+        // 设置稳定系统
+        function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
+          const model = document.querySelector('#mainModel');
           
-          if (targetEntity) {
+          if (targetEntity && model) {
+            let lastPosition = { x: 0, y: 0, z: 0 };
+            let lastRotation = { x: 0, y: 0, z: 0 };
+            let isTracking = false;
+            
+            // 目标检测事件
             targetEntity.addEventListener('targetFound', function() {
-              console.log('🎯 识别目标找到 - Buddha模型应该可见');
+              console.log('识别目标找到 - 显示佛像模型');
+              isTracking = true;
+              
+              // 重置历史记录，避免突然跳跃
+              stabilizer.positionHistory = [];
+              stabilizer.rotationHistory = [];
             });
             
             targetEntity.addEventListener('targetLost', function() {
-              console.log('👻 识别目标丢失 - Buddha模型隐藏');
+              console.log('识别目标丢失 - 隐藏佛像模型');
+              isTracking = false;
             });
+            
+            // 实时稳定更新
+            setInterval(() => {
+              if (isTracking) {
+                const currentPos = targetEntity.getAttribute('position') || lastPosition;
+                const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
+                
+                // 检查变化是否足够大
+                const positionDiff = Math.sqrt(
+                  Math.pow(currentPos.x - lastPosition.x, 2) +
+                  Math.pow(currentPos.y - lastPosition.y, 2) +
+                  Math.pow(currentPos.z - lastPosition.z, 2)
+                );
+                
+                if (positionDiff > stabilizer.threshold) {
+                  const smoothed = smoothTransform(currentPos, currentRot);
+                  
+                  // 应用平滑后的变换
+                  lastPosition = smoothed.position;
+                  lastRotation = smoothed.rotation;
+                  
+                  // 更新模型位置（保持相对偏移）
+                  model.setAttribute('position', {
+                    x: smoothed.position.x,
+                    y: smoothed.position.y,
+                    z: smoothed.position.z + 0.1  // 保持在识别图上方
+                  });
+                }
+              }
+            }, 16); // 约60fps
           }
-        });
+        }
+        
+        // 监听模型加载状态
+        const model = document.querySelector('#mainModel');
+        
+        if (model) {
+          model.addEventListener('model-loaded', function() {
+            console.log('佛像模型加载完成');
+          });
+          
+          model.addEventListener('model-error', function(event) {
+            console.error('佛像模型加载失败:', event.detail);
+          });
+        }
       });
     </script>
   </body>
