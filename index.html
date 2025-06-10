@@ -3,13 +3,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像动画</p>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像与梵音</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -35,22 +36,25 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- 3D模型资源 - 替换为您的buddhist.glb模型 -->
+        <!-- 3D模型资源 - 带动画的GLB模型 -->
         <a-asset-item id="buddhaModel" src="./buddhist.glb"></a-asset-item>
+        
+        <!-- 音频资源 -->
+        <audio id="chantAudio" src="./chant.mp3" preload="auto"></audio>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 主要3D模型 - 播放GLB内置动画 -->
+        <!-- 主要3D模型 - 悬浮在识别图上方 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
           position="0 0 0.3" 
-          scale="0.008 0.008 0.008" 
+          scale="0.5 0.5 0.5" 
           src="#buddhaModel" 
-          animation-mixer
-          visible="false">
+          animation-mixer="clip: *; loop: repeat"
+          animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate">
         </a-gltf-model>
         
         <!-- 辅助光效 -->
@@ -87,27 +91,36 @@
         const startButton = document.getElementById('startButton');
         const scene = document.querySelector('a-scene');
         
+        // 设置音频循环
+        const audio = document.querySelector('#chantAudio');
+        if (audio) {
+          audio.loop = true;
+        }
+        
         // 稳定系统参数
         const stabilizer = {
           positionHistory: [],
           rotationHistory: [],
           maxHistory: 5,
-          smoothFactor: 0.15,
-          threshold: 0.02
+          smoothFactor: 0.15,  // 更强的平滑
+          threshold: 0.02      // 位置变化阈值
         };
         
         // 位置平滑函数
         function smoothTransform(currentPos, currentRot) {
+          // 位置平滑
           stabilizer.positionHistory.push(currentPos);
           if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
             stabilizer.positionHistory.shift();
           }
           
+          // 旋转平滑
           stabilizer.rotationHistory.push(currentRot);
           if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
             stabilizer.rotationHistory.shift();
           }
           
+          // 计算平均位置
           const avgPos = { x: 0, y: 0, z: 0 };
           stabilizer.positionHistory.forEach(pos => {
             avgPos.x += pos.x;
@@ -122,6 +135,7 @@
             z: avgPos.z / posCount
           };
           
+          // 计算平均旋转
           const avgRot = { x: 0, y: 0, z: 0 };
           stabilizer.rotationHistory.forEach(rot => {
             avgRot.x += rot.x;
@@ -156,7 +170,7 @@
               }
             });
             
-            console.log('AR 3D动画模型场景已启动');
+            console.log('AR 3D模型场景已启动');
             
             // 启动稳定系统
             setupStabilization();
@@ -169,103 +183,31 @@
           }
         });
         
-        // 设置稳定系统和动画控制
+        // 设置稳定系统
         function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
           const model = document.querySelector('#mainModel');
+          const audio = document.querySelector('#chantAudio');
           
           if (targetEntity && model) {
             let lastPosition = { x: 0, y: 0, z: 0 };
             let lastRotation = { x: 0, y: 0, z: 0 };
             let isTracking = false;
-            let animationMixer = null;
-            
-            // 监听模型加载完成事件
-            model.addEventListener('model-loaded', function() {
-              console.log('3D模型加载完成');
-              
-              // 延迟获取动画信息，确保模型完全加载
-              setTimeout(() => {
-                const object3D = model.getObject3D('mesh');
-                if (object3D) {
-                  console.log('模型对象3D获取成功');
-                  
-                  // 检查动画
-                  if (object3D.animations && object3D.animations.length > 0) {
-                    console.log('发现动画数量:', object3D.animations.length);
-                    object3D.animations.forEach((clip, index) => {
-                      console.log(`动画 ${index}:`, clip.name, '时长:', clip.duration);
-                    });
-                    
-                    // 手动创建动画混合器
-                    const mixer = new THREE.AnimationMixer(object3D);
-                    const action = mixer.clipAction(object3D.animations[0]);
-                    action.play();
-                    
-                    console.log('动画开始播放');
-                    
-                    // 保存混合器以便后续控制
-                    model.mixer = mixer;
-                    model.action = action;
-                    
-                    // 启动动画更新循环
-                    const clock = new THREE.Clock();
-                    function animate() {
-                      if (model.mixer && isTracking) {
-                        model.mixer.update(clock.getDelta());
-                      }
-                      requestAnimationFrame(animate);
-                    }
-                    animate();
-                    
-                  } else {
-                    console.log('模型中未找到动画数据');
-                    
-                    // 检查是否有animation-mixer组件
-                    animationMixer = model.components['animation-mixer'];
-                    if (animationMixer) {
-                      console.log('使用A-Frame animation-mixer组件');
-                      if (animationMixer.mixer && animationMixer.mixer._actions.length > 0) {
-                        console.log('A-Frame动画混合器包含动作:', animationMixer.mixer._actions.length);
-                        animationMixer.mixer._actions.forEach(action => {
-                          action.play();
-                        });
-                      }
-                    }
-                  }
-                } else {
-                  console.log('无法获取模型的3D对象');
-                }
-              }, 500);
-            });
             
             // 目标检测事件
             targetEntity.addEventListener('targetFound', function() {
               console.log('识别目标找到 - 显示3D模型');
               isTracking = true;
-              model.setAttribute('visible', true);
               
               // 重置历史记录，避免突然跳跃
               stabilizer.positionHistory = [];
               stabilizer.rotationHistory = [];
               
-              targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示3D模型');
-              isTracking = true;
-              model.setAttribute('visible', true);
-              
-              // 重置历史记录，避免突然跳跃
-              stabilizer.positionHistory = [];
-              stabilizer.rotationHistory = [];
-              
-              // 恢复动画播放
-              if (model.action) {
-                model.action.paused = false;
-                console.log('恢复手动动画播放');
-              } else if (animationMixer && animationMixer.mixer) {
-                console.log('恢复A-Frame动画播放');
-                animationMixer.mixer._actions.forEach(action => {
-                  action.paused = false;
+              // 播放音频
+              if (audio) {
+                audio.currentTime = 0; // 从头开始播放
+                audio.play().catch(e => {
+                  console.log('音频播放失败:', e);
                 });
               }
             });
@@ -273,19 +215,11 @@
             targetEntity.addEventListener('targetLost', function() {
               console.log('识别目标丢失 - 隐藏3D模型');
               isTracking = false;
-              model.setAttribute('visible', false);
               
-              // 暂停动画以节省性能
-              if (model.action) {
-                model.action.paused = true;
-                console.log('暂停手动动画');
-              } else if (animationMixer && animationMixer.mixer) {
-                console.log('暂停A-Frame动画');
-                animationMixer.mixer._actions.forEach(action => {
-                  action.paused = true;
-                });
+              // 暂停音频
+              if (audio) {
+                audio.pause();
               }
-            });
             });
             
             // 实时稳定更新
@@ -294,6 +228,7 @@
                 const currentPos = targetEntity.getAttribute('position') || lastPosition;
                 const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
                 
+                // 检查变化是否足够大
                 const positionDiff = Math.sqrt(
                   Math.pow(currentPos.x - lastPosition.x, 2) +
                   Math.pow(currentPos.y - lastPosition.y, 2) +
@@ -303,6 +238,7 @@
                 if (positionDiff > stabilizer.threshold) {
                   const smoothed = smoothTransform(currentPos, currentRot);
                   
+                  // 应用平滑后的变换
                   lastPosition = smoothed.position;
                   lastRotation = smoothed.rotation;
                   
@@ -310,20 +246,24 @@
                   model.setAttribute('position', {
                     x: smoothed.position.x,
                     y: smoothed.position.y,
-                    z: smoothed.position.z + 0.3
+                    z: smoothed.position.z + 0.3  // 保持在识别图上方
                   });
                 }
               }
-            }, 16);
+            }, 16); // 约60fps
           }
         }
         
-        // 监听模型加载错误
+        // 监听模型加载状态
         const model = document.querySelector('#mainModel');
+        
         if (model) {
+          model.addEventListener('model-loaded', function() {
+            console.log('3D模型加载完成，包含动画');
+          });
+          
           model.addEventListener('model-error', function(event) {
             console.error('3D模型加载失败:', event.detail);
-            alert('模型加载失败，请检查buddhist.glb文件是否存在');
           });
         }
       });
