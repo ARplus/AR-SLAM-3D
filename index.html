@@ -7,7 +7,9 @@
 
   <!-- A-Frame 核心 -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <!-- MindAR for A-Frame -->
+  <!-- MindAR Core -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
+  <!-- MindAR A-Frame Extension -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
   <!-- 粒子特效组件 -->
   <script src="https://cdn.jsdelivr.net/npm/aframe-particle-system-component@1.0.0/dist/aframe-particle-system-component.min.js"></script>
@@ -15,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/aframe-gesture-detector@4.0.2/dist/aframe-gesture-detector.min.js"></script>
 
   <style>
-    /* 启动页 & 加载提示 样式 */
+    /* 启动页 & 加载提示 */
     #startScreen {
       position: fixed; top:0; left:0; width:100%; height:100%;
       background: linear-gradient(135deg, #1a1a2e, #16213e);
@@ -28,7 +30,6 @@
       background: linear-gradient(45deg, #ffd700, #ffed4e);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    #startScreen p { opacity: 0.9; margin: 0 0 10px; }
     #startButton {
       background: linear-gradient(45deg, #ffd700, #ff6b6b);
       color: white; border: none; padding: 18px 40px;
@@ -46,12 +47,12 @@
       color: white; font-size: 24px; z-index: 999;
       display: none;
     }
-    /* 隐藏场景直到加载/启动 */
+    /* 默认隐藏 A-Frame 场景 */
     a-scene { display: none; }
   </style>
 
+  <!-- 整体手势旋转+缩放组件 -->
   <script>
-    // 手势旋转 + 缩放组件
     AFRAME.registerComponent('gesture-handler', {
       init: function () {
         this.onRotate = this.onRotate.bind(this);
@@ -69,8 +70,8 @@
       },
       onPinch: function (ev) {
         const scale = this.el.getAttribute('scale');
-        const newS = scale.x * ev.detail.spreadChange;
-        this.el.setAttribute('scale', `${newS} ${newS} ${newS}`);
+        const s = scale.x * ev.detail.spreadChange;
+        this.el.setAttribute('scale', `${s} ${s} ${s}`);
       }
     });
   </script>
@@ -95,11 +96,10 @@
     embedded
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="colorManagement: true, physicallyCorrectLights: true"
-    loading-screen="enabled: false"
+    renderer="colorManagement: true; physicallyCorrectLights: true"
   >
     <a-assets>
-      <!-- GLB 模型 -->
+      <!-- 三个模型 -->
       <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
       <a-asset-item id="cloudModel"    src="./cloud.glb"></a-asset-item>
       <a-asset-item id="dragonModel"   src="./dragon.glb"></a-asset-item>
@@ -108,35 +108,32 @@
       <audio id="chant" src="./chant.mp3" preload="auto"></audio>
     </a-assets>
 
-    <!-- 摄像头 -->
     <a-camera position="0 0 0"></a-camera>
 
-    <!-- 识别到目标后内容 -->
     <a-entity mindar-image-target="targetIndex: 0">
       <!-- 改进版粒子系统 -->
-      <a-entity particle-system="
-        preset: dust;
-        particleCount: 800;
-        color: #dddddd,#888888;
-        size: 0.02;
-        opacity: 0.6;
-        velocityValue: 0 0.5 0;
-        accelerationValue: 0 -0.1 0;
-        duration: 6;
-        blending: additive;
-        texture: https://cdn.jsdelivr.net/gh/aframevr/aframe-particle-system-component@master/dist/images/spark1.png
-      "></a-entity>
+      <a-entity
+        particle-system="
+          preset: dust;
+          particleCount: 600;
+          size: 0.02;
+          color: #dddddd,#888888;
+          velocity: 0 0.5 0;
+          velocitySpread: 0.2 0.2 0.2;
+          acceleration: 0 -0.1 0;
+          maxAge: 5;
+        "
+      ></a-entity>
 
-      <!-- 模型组：支持整体手势旋转/缩放 -->
+      <!-- 模型组：整体手势旋转/缩放 -->
       <a-entity id="modelGroup"
                 gesture-handler
                 position="0 0 0"
                 rotation="0 0 0"
-                scale="0.1 0.1 0.1"
-      >
+                scale="0.1 0.1 0.1">
         <a-gltf-model src="#buddhistModel"></a-gltf-model>
-        <a-gltf-model src="#cloudModel"    position="0 0 0"></a-gltf-model>
-        <a-gltf-model src="#dragonModel"   position="0 0 0"></a-gltf-model>
+        <a-gltf-model src="#cloudModel"></a-gltf-model>
+        <a-gltf-model src="#dragonModel"></a-gltf-model>
       </a-entity>
 
       <!-- 音源实体（不自动播放） -->
@@ -145,54 +142,55 @@
     </a-entity>
   </a-scene>
 
-  <!-- 启动 & 音频逻辑 -->
+  <!-- 启动 & 音频控制逻辑 -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const startScreen = document.getElementById('startScreen');
       const startButton = document.getElementById('startButton');
-      const loadingText = document.querySelector('.loading-text');
-      const sceneEl = document.querySelector('a-scene');
+      const loadingText  = document.querySelector('.loading-text');
+      const sceneEl      = document.querySelector('a-scene');
 
-      // 点击启动
       startButton.addEventListener('click', async () => {
+        // resume AudioContext 以满足浏览器自动播放策略
+        const ctx = AFRAME.audioListener.context;
+        if (ctx.state === 'suspended') { await ctx.resume(); }
+
         startScreen.style.display = 'none';
         loadingText.style.display = 'block';
-        sceneEl.style.display = 'block';
+        sceneEl.style.display   = 'block';
+
         try {
-          await new Promise(resolve => {
-            if (sceneEl.hasLoaded) resolve();
-            else sceneEl.addEventListener('loaded', resolve);
+          await new Promise(res => {
+            if (sceneEl.hasLoaded) return res();
+            sceneEl.addEventListener('loaded', res);
           });
           loadingText.style.display = 'none';
           initAR();
-        } catch (e) {
+        } catch {
           alert('AR 启动失败，请检查摄像头权限后重试');
           startScreen.style.display = 'flex';
-          sceneEl.style.display = 'none';
+          sceneEl.style.display     = 'none';
           loadingText.style.display = 'none';
         }
       });
 
       function initAR() {
-        const target = document.querySelector('[mindar-image-target]');
-        const audioCtx = AFRAME.audioListener.context;
-        const bellComp  = document.querySelector('#soundBell').components.sound;
-        const chantComp = document.querySelector('#soundChant').components.sound;
+        const target   = document.querySelector('[mindar-image-target]');
+        const bellComp = document.querySelector('#soundBell').components.sound;
+        const chantComp= document.querySelector('#soundChant').components.sound;
+        const ctx      = AFRAME.audioListener.context;
 
-        // 防止 AudioContext 被挂起
-        ['click','touchend'].forEach(evt => {
+        // 再次确保用户交互后 AudioContext 已 resume
+        ['click','touchend'].forEach(evt =>
           window.addEventListener(evt, () => {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-          });
-        });
+            if (ctx.state === 'suspended') ctx.resume();
+          })
+        );
 
         target.addEventListener('targetFound', () => {
-          if (audioCtx.state === 'suspended') audioCtx.resume();
           bellComp.playSound();
-          // 梵音稍后播放
           setTimeout(() => chantComp.playSound(), 1500);
         });
-
         target.addEventListener('targetLost', () => {
           bellComp.stopSound();
           chantComp.stopSound();
