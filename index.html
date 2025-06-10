@@ -3,9 +3,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- 添加FBX加载器支持 -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/FBXLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-fbx-model@0.3.0/dist/aframe-fbx-model.min.js"></script>
+    <!-- 更可靠的FBX支持 -->
+    <script src="https://threejs.org/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://threejs.org/examples/js/libs/fflate.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
@@ -38,20 +38,36 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- FBX模型资源 -->
-        <a-asset-item id="buddhaModel" src="https://github.com/ARplus/AR-SLAM-3D/raw/main/buddha.fbx"></a-asset-item>
+        <!-- FBX模型资源 - 使用JSDelivr CDN避免CORS问题 -->
+        <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddha.fbx"></a-asset-item>
+        
+        <!-- 备用GLB模型 -->
+        <a-asset-item id="buddhaModelGLB" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 主要3D模型 - 使用FBX格式 -->
-        <a-entity 
+        <!-- 主要3D模型 - 先尝试GLB，失败后使用FBX -->
+        <a-gltf-model 
           id="mainModel"
-          fbx-model="src: #buddhaModel" 
           rotation="0 0 0" 
           position="0 0 0.3" 
           scale="0.008 0.008 0.008" 
+          src="#buddhaModelGLB"
+          visible="true"
+          animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
+        </a-gltf-model>
+        
+        <!-- FBX备用模型 -->
+        <a-entity 
+          id="mainModelFBX"
+          fbx-model-custom="src: #buddhaModel" 
+          rotation="0 0 0" 
+          position="0 0 0.3" 
+          scale="0.008 0.008 0.008" 
+          visible="false"
           animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
           animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
         </a-entity>
@@ -211,21 +227,22 @@
         function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
           const model = document.querySelector('#mainModel');
+          const modelFBX = document.querySelector('#mainModelFBX');
           
-          if (targetEntity && model) {
+          if (targetEntity && (model || modelFBX)) {
             let lastPosition = { x: 0, y: 0, z: 0 };
             let lastRotation = { x: 0, y: 0, z: 0 };
             let isTracking = false;
             
             targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示FBX模型');
+              console.log('识别目标找到 - 显示3D模型');
               isTracking = true;
               stabilizer.positionHistory = [];
               stabilizer.rotationHistory = [];
             });
             
             targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏FBX模型');
+              console.log('识别目标丢失 - 隐藏3D模型');
               isTracking = false;
             });
             
@@ -246,31 +263,64 @@
                   lastPosition = smoothed.position;
                   lastRotation = smoothed.rotation;
                   
-                  model.setAttribute('position', {
-                    x: smoothed.position.x,
-                    y: smoothed.position.y,
-                    z: smoothed.position.z + 0.3
-                  });
+                  // 更新当前可见的模型
+                  const activeModel = model.getAttribute('visible') ? model : modelFBX;
+                  if (activeModel) {
+                    activeModel.setAttribute('position', {
+                      x: smoothed.position.x,
+                      y: smoothed.position.y,
+                      z: smoothed.position.z + 0.3
+                    });
+                  }
                 }
               }
             }, 16);
           }
         }
         
-        // 监听FBX模型加载状态
+        // 监听模型加载状态
         const model = document.querySelector('#mainModel');
+        const modelFBX = document.querySelector('#mainModelFBX');
+        let modelLoaded = false;
         
         if (model) {
           model.addEventListener('model-loaded', function() {
-            console.log('FBX模型加载完成');
+            console.log('GLB模型加载完成');
+            modelLoaded = true;
           });
           
           model.addEventListener('model-error', function(event) {
-            console.error('FBX模型加载失败:', event.detail);
+            console.error('GLB模型加载失败，尝试FBX模型:', event.detail);
             
-            // 如果FBX加载失败，尝试使用自定义组件
-            console.log('尝试使用自定义FBX加载器...');
-            model.setAttribute('fbx-model-custom', 'src: #buddhaModel');
+            // 隐藏GLB模型，显示FBX模型
+            model.setAttribute('visible', 'false');
+            if (modelFBX) {
+              modelFBX.setAttribute('visible', 'true');
+              console.log('切换到FBX模型');
+            }
+          });
+        }
+        
+        if (modelFBX) {
+          modelFBX.addEventListener('model-loaded', function() {
+            console.log('FBX模型加载完成');
+            modelLoaded = true;
+          });
+          
+          modelFBX.addEventListener('model-error', function(event) {
+            console.error('FBX模型也加载失败:', event.detail);
+            
+            // 如果都失败了，显示一个简单的几何体作为占位符
+            const targetEntity = document.querySelector('[mindar-image-target]');
+            if (targetEntity) {
+              const placeholder = document.createElement('a-box');
+              placeholder.setAttribute('position', '0 0 0.3');
+              placeholder.setAttribute('scale', '0.2 0.2 0.2');
+              placeholder.setAttribute('color', '#ff6b6b');
+              placeholder.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 3000; loop: true');
+              targetEntity.appendChild(placeholder);
+              console.log('显示占位符几何体');
+            }
           });
         }
       });
