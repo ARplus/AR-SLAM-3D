@@ -1,27 +1,27 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- A-Frame 核心库 -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- MindAR for Image Tracking -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- 可靠的FBX支持 -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/FBXLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/libs/fflate.min.js"></script>
+    <!-- A-Frame Extras Loaders：支持 FBXLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.loaders.min.js"></script>
   </head>
   <body>
-    <!-- 启动界面 -->
+    <!-- 启动界面保持不变 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
         <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
         <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像</p>
         <button id="startButton" style="
-          background: #fff; 
-          color: #667eea; 
-          border: none; 
-          padding: 15px 30px; 
-          font-size: 1.2em; 
-          border-radius: 25px; 
-          cursor: pointer; 
+          background: #fff;
+          color: #667eea;
+          border: none;
+          padding: 15px 30px;
+          font-size: 1.2em;
+          border-radius: 25px;
+          cursor: pointer;
           box-shadow: 0 4px 15px rgba(0,0,0,0.2);
           transition: transform 0.2s;
         " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -31,355 +31,58 @@
       </div>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
+    <a-scene mindar-image="imageTargetSrc: ./qianfo.mind"
+             color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights"
+             vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false"
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- FBX模型资源 -->
-        <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddha.fbx"></a-asset-item>
+        <!-- 将本地的 buddha.fbx 加入资产管理 -->
+        <a-asset-item id="buddhaFBX" src="buddha.fbx"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- FBX模型容器 -->
-        <a-entity 
-          id="mainModel"
-          fbx-model-loader
-          rotation="0 0 0" 
-          position="0 0 0.2" 
-          scale="1 1 1"
-          visible="true">
+        <!-- 主要 FBX 模型 -->
+        <a-entity id="mainModel"
+                  fbx-model="src: #buddhaFBX"
+                  position="0 0 0.3"
+                  rotation="0 0 0"
+                  scale="0.008 0.008 0.008"
+                  animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
+                  animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
         </a-entity>
         
-        <!-- 辅助光效 - 增强照明 -->
-        <a-light type="point" position="0 2 1" color="#ffffff" intensity="2.0"></a-light>
-        <a-light type="ambient" color="#ffffff" intensity="1.0"></a-light>
-        <a-light type="directional" position="1 1 1" color="#ffffff" intensity="1.5"></a-light>
+        <!-- 光效保持不变 -->
+        <a-light type="point" position="0 2 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
         
-        <!-- 可选：添加粒子效果或环境装饰 -->
-        <a-ring 
-          position="0 -0.1 0" 
-          rotation="-90 0 0" 
-          radius-inner="0.3" 
-          radius-outer="0.5" 
-          color="#ffd700" 
-          opacity="0.3"
-          animation="property: rotation; to: -90 360 0; dur: 10000; easing: linear; loop: true">
+        <!-- 环形和圆盘效果保持不变 -->
+        <a-ring position="0 -0.1 0" rotation="-90 0 0" radius-inner="0.3" radius-outer="0.5" color="#ffd700" opacity="0.3"
+                animation="property: rotation; to: -90 360 0; dur: 10000; easing: linear; loop: true">
         </a-ring>
-        
-        <!-- 发光效果圆盘 -->
-        <a-circle 
-          position="0 -0.05 0" 
-          rotation="-90 0 0" 
-          radius="0.4" 
-          color="#ffeb3b" 
-          opacity="0.2"
-          animation="property: scale; to: 1.2 1.2 1.2; dur: 1500; easing: easeInOutQuad; loop: true; dir: alternate">
+        <a-circle position="0 -0.05 0" rotation="-90 0 0" radius="0.4" color="#ffeb3b" opacity="0.2"
+                  animation="property: scale; to: 1.2 1.2 1.2; dur: 1500; easing: easeInOutQuad; loop: true; dir: alternate">
         </a-circle>
       </a-entity>
       
     </a-scene>
 
     <script>
-      // 专门的FBX加载器组件
-      AFRAME.registerComponent('fbx-model-loader', {
-        schema: {
-          src: {type: 'string', default: '#buddhaModel'}
-        },
-        
-        init: function () {
-          this.model = null;
-          this.loadFBXModel();
-        },
-        
-        loadFBXModel: function() {
-          const el = this.el;
-          const data = this.data;
-          
-          // 动态加载FBX加载器
-          if (!window.THREE || !window.THREE.FBXLoader) {
-            this.loadFBXLoader().then(() => {
-              this.loadModel();
-            });
-          } else {
-            this.loadModel();
-          }
-        },
-        
-        loadFBXLoader: function() {
-          return new Promise((resolve, reject) => {
-            // 移动端兼容性检查
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-              console.log('📱 检测到移动设备，使用优化版几何体佛像');
-              resolve();
-              return;
-            }
-            
-            // 检查FBX Loader是否已加载
-            if (window.THREE && window.THREE.FBXLoader) {
-              console.log('FBX Loader 已准备就绪');
-              resolve();
-            } else {
-              console.log('等待FBX Loader初始化...');
-              setTimeout(() => {
-                if (window.THREE && window.THREE.FBXLoader) {
-                  resolve();
-                } else {
-                  console.log('FBX Loader未找到，使用优化几何体');
-                  resolve();
-                }
-              }, 1000);
-            }
-          });
-        },
-        
-        loadModel: function() {
-          const el = this.el;
-          const assetItem = document.querySelector(this.data.src);
-          
-          if (!assetItem) {
-            console.error('找不到FBX资源:', this.data.src);
-            this.showPlaceholder();
-            return;
-          }
-          
-          const fbxUrl = assetItem.getAttribute('src');
-          console.log('开始加载FBX模型:', fbxUrl);
-          
-          // 临时使用几何体测试显示
-          console.log('创建测试几何体来验证显示功能');
-          
-          // 创建一个更大、更明显的测试几何体
-          console.log('创建大尺寸测试几何体来验证显示功能');
-          
-          const group = new THREE.Group();
-          
-          // 更大的底座 - 明亮颜色
-          const baseGeometry = new THREE.CylinderGeometry(0.8, 1.0, 0.2, 8);
-          const baseMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000}); // 红色
-          const base = new THREE.Mesh(baseGeometry, baseMaterial);
-          base.position.y = -0.5;
-          group.add(base);
-          
-          // 更大的身体 - 明亮颜色
-          const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.0, 8);
-          const bodyMaterial = new THREE.MeshBasicMaterial({color: 0x00FF00}); // 绿色
-          const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-          body.position.y = 0.2;
-          group.add(body);
-          
-          // 更大的头部 - 明亮颜色
-          const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-          const headMaterial = new THREE.MeshBasicMaterial({color: 0x0000FF}); // 蓝色
-          const head = new THREE.Mesh(headGeometry, headMaterial);
-          head.position.y = 0.9;
-          group.add(head);
-          
-          // 更大的光环 - 明亮颜色
-          const haloGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
-          const haloMaterial = new THREE.MeshBasicMaterial({color: 0xFFFF00}); // 黄色
-          const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-          halo.position.y = 1.2;
-          halo.rotation.x = Math.PI / 2;
-          group.add(halo);
-          
-          // 设置组的整体缩放 - 确保可见
-          group.scale.set(1, 1, 1);
-          
-          // 添加到场景
-          this.model = group;
-          el.setObject3D('mesh', group);
-          
-          // 触发加载完成事件
-          el.emit('model-loaded', {format: 'test-geometry', model: group});
-          console.log('测试几何体已添加到场景');
-          
-          // 尝试真正加载FBX (如果可能的话)
-          this.tryLoadRealFBX(fbxUrl, el);
-        },
-        
-        tryLoadRealFBX: function(fbxUrl, el) {
-          // 尝试使用fetch获取FBX文件
-          console.log('尝试获取FBX文件信息...');
-          
-          fetch(fbxUrl, {mode: 'no-cors'})
-            .then(response => {
-              console.log('FBX文件存在，但无法直接加载。建议转换为GLTF格式。');
-            })
-            .catch(error => {
-              console.log('FBX文件访问失败:', error);
-            });
-        },
-        
-        remove: function () {
-          if (this.model) {
-            this.el.removeObject3D('mesh');
-          }
-        }
-      });
-
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', () => {
         const startScreen = document.getElementById('startScreen');
         const startButton = document.getElementById('startButton');
         const scene = document.querySelector('a-scene');
-        
-        // 稳定系统参数
-        const stabilizer = {
-          positionHistory: [],
-          rotationHistory: [],
-          maxHistory: 5,
-          smoothFactor: 0.15,
-          threshold: 0.02
-        };
-        
-        // 位置平滑函数
-        function smoothTransform(currentPos, currentRot) {
-          stabilizer.positionHistory.push(currentPos);
-          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
-            stabilizer.positionHistory.shift();
-          }
-          
-          stabilizer.rotationHistory.push(currentRot);
-          if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
-            stabilizer.rotationHistory.shift();
-          }
-          
-          const avgPos = { x: 0, y: 0, z: 0 };
-          stabilizer.positionHistory.forEach(pos => {
-            avgPos.x += pos.x;
-            avgPos.y += pos.y;
-            avgPos.z += pos.z;
-          });
-          
-          const posCount = stabilizer.positionHistory.length;
-          const smoothedPos = {
-            x: avgPos.x / posCount,
-            y: avgPos.y / posCount,
-            z: avgPos.z / posCount
-          };
-          
-          const avgRot = { x: 0, y: 0, z: 0 };
-          stabilizer.rotationHistory.forEach(rot => {
-            avgRot.x += rot.x;
-            avgRot.y += rot.y;
-            avgRot.z += rot.z;
-          });
-          
-          const rotCount = stabilizer.rotationHistory.length;
-          const smoothedRot = {
-            x: avgRot.x / rotCount,
-            y: avgRot.y / rotCount,
-            z: avgRot.z / rotCount
-          };
-          
-          return { position: smoothedPos, rotation: smoothedRot };
-        }
-        
-        // 初始隐藏场景
         scene.style.display = 'none';
-        
-        // 启动按钮点击事件
-        startButton.addEventListener('click', async function() {
-          try {
-            startScreen.style.display = 'none';
-            scene.style.display = 'block';
-            
-            await new Promise(resolve => {
-              if (scene.hasLoaded) {
-                resolve();
-              } else {
-                scene.addEventListener('loaded', resolve);
-              }
-            });
-            
-            console.log('AR FBX场景已启动');
-            setupStabilization();
-            
-          } catch (error) {
-            console.error('启动AR失败:', error);
-            alert('启动AR失败，请检查摄像头权限并刷新页面重试');
-            startScreen.style.display = 'flex';
-            scene.style.display = 'none';
-          }
+
+        startButton.addEventListener('click', async () => {
+          startScreen.style.display = 'none';
+          scene.style.display = 'block';
+          await new Promise(res => scene.hasLoaded ? res() : scene.addEventListener('loaded', res));
         });
-        
-        // 设置稳定系统
-        function setupStabilization() {
-          const targetEntity = document.querySelector('[mindar-image-target]');
-          const model = document.querySelector('#mainModel');
-          
-          if (targetEntity && model) {
-            let lastPosition = { x: 0, y: 0, z: 0 };
-            let lastRotation = { x: 0, y: 0, z: 0 };
-            let isTracking = false;
-            
-            targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示FBX模型');
-              isTracking = true;
-              stabilizer.positionHistory = [];
-              stabilizer.rotationHistory = [];
-            });
-            
-            targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏FBX模型');
-              isTracking = false;
-            });
-            
-            setInterval(() => {
-              if (isTracking) {
-                const currentPos = targetEntity.getAttribute('position') || lastPosition;
-                const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
-                
-                const positionDiff = Math.sqrt(
-                  Math.pow(currentPos.x - lastPosition.x, 2) +
-                  Math.pow(currentPos.y - lastPosition.y, 2) +
-                  Math.pow(currentPos.z - lastPosition.z, 2)
-                );
-                
-                if (positionDiff > stabilizer.threshold) {
-                  const smoothed = smoothTransform(currentPos, currentRot);
-                  
-                  lastPosition = smoothed.position;
-                  lastRotation = smoothed.rotation;
-                  
-                  model.setAttribute('position', {
-                    x: smoothed.position.x,
-                    y: smoothed.position.y,
-                    z: smoothed.position.z + 0.3
-                  });
-                }
-              }
-            }, 16);
-          }
-        }
-        
-        // 监听FBX模型加载状态
-        const model = document.querySelector('#mainModel');
-        
-        if (model) {
-          model.addEventListener('model-loaded', function(event) {
-            console.log('FBX模型加载完成，可以添加动画和粒子效果了');
-            const fbxModel = event.detail.model;
-            
-            // 这里可以添加你的动画逻辑
-            // fbxModel.animations 包含FBX的动画数据
-            if (fbxModel.animations && fbxModel.animations.length > 0) {
-              console.log('找到', fbxModel.animations.length, '个动画');
-              // 可以在这里设置动画混合器等
-            }
-          });
-          
-          model.addEventListener('model-error', function(event) {
-            console.error('FBX模型加载失败:', event.detail);
-          });
-        }
       });
     </script>
   </body>
