@@ -5,11 +5,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   </head>
   <body>
+    <!-- 启动界面 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
-        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像模型</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">💡 扫描识别图后使用屏幕按钮放大观看</p>
+        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像动画</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -27,14 +27,6 @@
       </div>
     </div>
 
-    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 14px;">
-      👆 点击下方按钮可以放大佛像
-    </div>
-
-    <div id="zoomButton" style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 15px 25px; border-radius: 25px; font-family: Arial, sans-serif; display: none; z-index: 100; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; user-select: none;">
-      🔍 放大佛像
-    </div>
-
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
              color-space="sRGB" 
              renderer="colorManagement: true, physicallyCorrectLights" 
@@ -43,45 +35,48 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
+        <!-- 3D模型资源 - 替换为您的buddhist.glb模型 -->
+        <a-asset-item id="buddhaModel" src="./buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
+        <!-- 主要3D模型 - 播放GLB内置动画 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
-          position="0 0 0.1" 
-          scale="0.8 0.8 0.8" 
-          src="#buddhistModel" 
-          animation="property: position; to: 0 0 0.15; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation-mixer="clip: *; loop: repeat">
+          position="0 0 0.3" 
+          scale="0.008 0.008 0.008" 
+          src="#buddhaModel" 
+          animation-mixer
+          visible="false">
         </a-gltf-model>
         
-        <a-entity id="lightRig" 
-                  animation="property: rotation; to: 0 360 0; dur: 25000; easing: linear; loop: true">
-          <a-light type="point" position="0 0.3 0.3" color="#ffd700" intensity="2.5"></a-light>
-          <a-light type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="2.0" 
-                   angle="45" penumbra="0.2"></a-light>
-        </a-entity>
+        <!-- 辅助光效 -->
+        <a-light type="point" position="0 2 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
         
-        <a-light type="ambient" color="#5d4e37" intensity="0.8"></a-light>
-        
-        <a-light type="directional" position="0 2 1" color="#ffecb3" intensity="1.2"></a-light>
-        <a-light type="point" position="1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
-        <a-light type="point" position="-1 0.5 0.5" color="#ffe082" intensity="1.0"></a-light>
-        
-        <a-light type="point" position="0 -0.3 0.2" color="#fff8e1" intensity="0.8"></a-light>
-        
+        <!-- 可选：添加粒子效果或环境装饰 -->
         <a-ring 
-          position="0 0 -0.5" 
-          radius-inner="0.8" 
-          radius-outer="0.82" 
-          color="#37474f" 
-          opacity="0.05"
-          animation="property: scale; to: 1.5 1.5 1.5; dur: 8000; easing: easeOutQuart; loop: true">
+          position="0 -0.1 0" 
+          rotation="-90 0 0" 
+          radius-inner="0.3" 
+          radius-outer="0.5" 
+          color="#ffd700" 
+          opacity="0.3"
+          animation="property: rotation; to: -90 360 0; dur: 10000; easing: linear; loop: true">
         </a-ring>
+        
+        <!-- 发光效果圆盘 -->
+        <a-circle 
+          position="0 -0.05 0" 
+          rotation="-90 0 0" 
+          radius="0.4" 
+          color="#ffeb3b" 
+          opacity="0.2"
+          animation="property: scale; to: 1.2 1.2 1.2; dur: 1500; easing: easeInOutQuad; loop: true; dir: alternate">
+        </a-circle>
       </a-entity>
       
     </a-scene>
@@ -97,72 +92,51 @@
           positionHistory: [],
           rotationHistory: [],
           maxHistory: 5,
-          smoothFactor: 0.15,  // 更强的平滑
-          threshold: 0.02      // 位置变化阈值
+          smoothFactor: 0.15,
+          threshold: 0.02
         };
         
-        // 超强稳定性平滑函数
-        function ultraSmoothTransform(currentPos, currentRot) {
-          // 位置平滑
-          stabilizer.positionHistory.push({...currentPos});
+        // 位置平滑函数
+        function smoothTransform(currentPos, currentRot) {
+          stabilizer.positionHistory.push(currentPos);
           if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
             stabilizer.positionHistory.shift();
           }
           
-          // 检测是否在静止状态
-          if (stabilizer.positionHistory.length >= 5) {
-            const recent = stabilizer.positionHistory.slice(-5);
-            const avgRecent = recent.reduce((acc, pos) => ({
-              x: acc.x + pos.x / 5,
-              y: acc.y + pos.y / 5,
-              z: acc.z + pos.z / 5
-            }), {x: 0, y: 0, z: 0});
-            
-            const maxDeviation = Math.max(
-              ...recent.map(pos => Math.sqrt(
-                Math.pow(pos.x - avgRecent.x, 2) +
-                Math.pow(pos.y - avgRecent.y, 2) +
-                Math.pow(pos.z - avgRecent.z, 2)
-              ))
-            );
-            
-            // 判断是否为静止状态
-            if (maxDeviation < stabilizer.staticThreshold) {
-              stabilizer.staticFrames++;
-              if (stabilizer.staticFrames > 8) { // 连续8帧静止
-                stabilizer.isStatic = true;
-                if (!stabilizer.lockPosition) {
-                  stabilizer.lockPosition = {...avgRecent};
-                }
-                return { position: stabilizer.lockPosition, rotation: currentRot };
-              }
-            } else {
-              stabilizer.staticFrames = 0;
-              stabilizer.isStatic = false;
-              stabilizer.lockPosition = null;
-            }
+          stabilizer.rotationHistory.push(currentRot);
+          if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
+            stabilizer.rotationHistory.shift();
           }
           
-          // 如果不是静止状态，使用加权平滑
-          let totalWeight = 0;
           const avgPos = { x: 0, y: 0, z: 0 };
-          
-          // 指数权重：越新的帧权重越大
-          stabilizer.positionHistory.forEach((pos, index) => {
-            const weight = Math.pow(1.5, index); // 指数增长权重
-            avgPos.x += pos.x * weight;
-            avgPos.y += pos.y * weight;
-            avgPos.z += pos.z * weight;
-            totalWeight += weight;
+          stabilizer.positionHistory.forEach(pos => {
+            avgPos.x += pos.x;
+            avgPos.y += pos.y;
+            avgPos.z += pos.z;
           });
           
+          const posCount = stabilizer.positionHistory.length;
           const smoothedPos = {
-            x: avgPos.x / totalWeight,
-            y: avgPos.y / totalWeight,
-            z: avgPos.z / totalWeight
+            x: avgPos.x / posCount,
+            y: avgPos.y / posCount,
+            z: avgPos.z / posCount
           };
           
-          return { position: smoothedPos, rotation: currentRot };
+          const avgRot = { x: 0, y: 0, z: 0 };
+          stabilizer.rotationHistory.forEach(rot => {
+            avgRot.x += rot.x;
+            avgRot.y += rot.y;
+            avgRot.z += rot.z;
+          });
+          
+          const rotCount = stabilizer.rotationHistory.length;
+          const smoothedRot = {
+            x: avgRot.x / rotCount,
+            y: avgRot.y / rotCount,
+            z: avgRot.z / rotCount
+          };
+          
+          return { position: smoothedPos, rotation: smoothedRot };
         }
         
         // 初始隐藏场景
@@ -182,7 +156,7 @@
               }
             });
             
-            console.log('AR 佛像场景已启动');
+            console.log('AR 3D动画模型场景已启动');
             
             // 启动稳定系统
             setupStabilization();
@@ -195,7 +169,7 @@
           }
         });
         
-        // 设置稳定系统
+        // 设置稳定系统和动画控制
         function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
           const model = document.querySelector('#mainModel');
@@ -204,20 +178,114 @@
             let lastPosition = { x: 0, y: 0, z: 0 };
             let lastRotation = { x: 0, y: 0, z: 0 };
             let isTracking = false;
+            let animationMixer = null;
+            
+            // 监听模型加载完成事件
+            model.addEventListener('model-loaded', function() {
+              console.log('3D模型加载完成');
+              
+              // 延迟获取动画信息，确保模型完全加载
+              setTimeout(() => {
+                const object3D = model.getObject3D('mesh');
+                if (object3D) {
+                  console.log('模型对象3D获取成功');
+                  
+                  // 检查动画
+                  if (object3D.animations && object3D.animations.length > 0) {
+                    console.log('发现动画数量:', object3D.animations.length);
+                    object3D.animations.forEach((clip, index) => {
+                      console.log(`动画 ${index}:`, clip.name, '时长:', clip.duration);
+                    });
+                    
+                    // 手动创建动画混合器
+                    const mixer = new THREE.AnimationMixer(object3D);
+                    const action = mixer.clipAction(object3D.animations[0]);
+                    action.play();
+                    
+                    console.log('动画开始播放');
+                    
+                    // 保存混合器以便后续控制
+                    model.mixer = mixer;
+                    model.action = action;
+                    
+                    // 启动动画更新循环
+                    const clock = new THREE.Clock();
+                    function animate() {
+                      if (model.mixer && isTracking) {
+                        model.mixer.update(clock.getDelta());
+                      }
+                      requestAnimationFrame(animate);
+                    }
+                    animate();
+                    
+                  } else {
+                    console.log('模型中未找到动画数据');
+                    
+                    // 检查是否有animation-mixer组件
+                    animationMixer = model.components['animation-mixer'];
+                    if (animationMixer) {
+                      console.log('使用A-Frame animation-mixer组件');
+                      if (animationMixer.mixer && animationMixer.mixer._actions.length > 0) {
+                        console.log('A-Frame动画混合器包含动作:', animationMixer.mixer._actions.length);
+                        animationMixer.mixer._actions.forEach(action => {
+                          action.play();
+                        });
+                      }
+                    }
+                  }
+                } else {
+                  console.log('无法获取模型的3D对象');
+                }
+              }, 500);
+            });
             
             // 目标检测事件
             targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示佛像模型');
+              console.log('识别目标找到 - 显示3D模型');
               isTracking = true;
+              model.setAttribute('visible', true);
               
               // 重置历史记录，避免突然跳跃
               stabilizer.positionHistory = [];
               stabilizer.rotationHistory = [];
+              
+              targetEntity.addEventListener('targetFound', function() {
+              console.log('识别目标找到 - 显示3D模型');
+              isTracking = true;
+              model.setAttribute('visible', true);
+              
+              // 重置历史记录，避免突然跳跃
+              stabilizer.positionHistory = [];
+              stabilizer.rotationHistory = [];
+              
+              // 恢复动画播放
+              if (model.action) {
+                model.action.paused = false;
+                console.log('恢复手动动画播放');
+              } else if (animationMixer && animationMixer.mixer) {
+                console.log('恢复A-Frame动画播放');
+                animationMixer.mixer._actions.forEach(action => {
+                  action.paused = false;
+                });
+              }
             });
             
             targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏佛像模型');
+              console.log('识别目标丢失 - 隐藏3D模型');
               isTracking = false;
+              model.setAttribute('visible', false);
+              
+              // 暂停动画以节省性能
+              if (model.action) {
+                model.action.paused = true;
+                console.log('暂停手动动画');
+              } else if (animationMixer && animationMixer.mixer) {
+                console.log('暂停A-Frame动画');
+                animationMixer.mixer._actions.forEach(action => {
+                  action.paused = true;
+                });
+              }
+            });
             });
             
             // 实时稳定更新
@@ -226,7 +294,6 @@
                 const currentPos = targetEntity.getAttribute('position') || lastPosition;
                 const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
                 
-                // 检查变化是否足够大
                 const positionDiff = Math.sqrt(
                   Math.pow(currentPos.x - lastPosition.x, 2) +
                   Math.pow(currentPos.y - lastPosition.y, 2) +
@@ -236,7 +303,6 @@
                 if (positionDiff > stabilizer.threshold) {
                   const smoothed = smoothTransform(currentPos, currentRot);
                   
-                  // 应用平滑后的变换
                   lastPosition = smoothed.position;
                   lastRotation = smoothed.rotation;
                   
@@ -244,24 +310,20 @@
                   model.setAttribute('position', {
                     x: smoothed.position.x,
                     y: smoothed.position.y,
-                    z: smoothed.position.z + 0.1  // 保持在识别图上方
+                    z: smoothed.position.z + 0.3
                   });
                 }
               }
-            }, 16); // 约60fps
+            }, 16);
           }
         }
         
-        // 监听模型加载状态
+        // 监听模型加载错误
         const model = document.querySelector('#mainModel');
-        
         if (model) {
-          model.addEventListener('model-loaded', function() {
-            console.log('佛像模型加载完成');
-          });
-          
           model.addEventListener('model-error', function(event) {
-            console.error('佛像模型加载失败:', event.detail);
+            console.error('3D模型加载失败:', event.detail);
+            alert('模型加载失败，请检查buddhist.glb文件是否存在');
           });
         }
       });
