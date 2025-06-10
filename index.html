@@ -131,37 +131,42 @@
           // 临时使用几何体测试显示
           console.log('创建测试几何体来验证显示功能');
           
-          // 创建一个佛像形状的几何体组合
+          // 创建一个更大、更明显的测试几何体
+          console.log('创建大尺寸测试几何体来验证显示功能');
+          
           const group = new THREE.Group();
           
-          // 底座
-          const baseGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.05, 8);
-          const baseMaterial = new THREE.MeshLambertMaterial({color: 0x8B4513});
+          // 更大的底座 - 明亮颜色
+          const baseGeometry = new THREE.CylinderGeometry(0.8, 1.0, 0.2, 8);
+          const baseMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000}); // 红色
           const base = new THREE.Mesh(baseGeometry, baseMaterial);
-          base.position.y = -0.1;
+          base.position.y = -0.5;
           group.add(base);
           
-          // 身体
-          const bodyGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.25, 8);
-          const bodyMaterial = new THREE.MeshLambertMaterial({color: 0xFFD700});
+          // 更大的身体 - 明亮颜色
+          const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.0, 8);
+          const bodyMaterial = new THREE.MeshBasicMaterial({color: 0x00FF00}); // 绿色
           const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-          body.position.y = 0.05;
+          body.position.y = 0.2;
           group.add(body);
           
-          // 头部
-          const headGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-          const headMaterial = new THREE.MeshLambertMaterial({color: 0xFFDDBB});
+          // 更大的头部 - 明亮颜色
+          const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+          const headMaterial = new THREE.MeshBasicMaterial({color: 0x0000FF}); // 蓝色
           const head = new THREE.Mesh(headGeometry, headMaterial);
-          head.position.y = 0.22;
+          head.position.y = 0.9;
           group.add(head);
           
-          // 光环
-          const haloGeometry = new THREE.TorusGeometry(0.1, 0.005, 8, 16);
-          const haloMaterial = new THREE.MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.8});
+          // 更大的光环 - 明亮颜色
+          const haloGeometry = new THREE.TorusGeometry(0.5, 0.05, 8, 16);
+          const haloMaterial = new THREE.MeshBasicMaterial({color: 0xFFFF00}); // 黄色
           const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-          halo.position.y = 0.28;
+          halo.position.y = 1.2;
           halo.rotation.x = Math.PI / 2;
           group.add(halo);
+          
+          // 设置组的整体缩放 - 确保可见
+          group.scale.set(1, 1, 1);
           
           // 添加到场景
           this.model = group;
