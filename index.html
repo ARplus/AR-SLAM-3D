@@ -3,7 +3,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- 暂时移除粒子系统，先确保基本AR功能正常 -->
+    <!-- A-Frame Extras - 支持FBX模型和动画 -->
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
@@ -41,6 +42,11 @@
         🔍 放大
       </div>
 
+      <!-- 动画控制按钮 -->
+      <div id="animationButton" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(78,205,196,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
+        🧘 动画
+      </div>
+
       <!-- 特效控制按钮 -->
       <div id="effectButton" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(255,107,107,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
         ✨ 重播
@@ -60,8 +66,8 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- 佛像3D模型 -->
-        <a-asset-item id="buddhistModel" src="./buddhist.glb"></a-asset-item>
+        <!-- 佛像FBX模型 - 支持动画 -->
+        <a-asset-item id="buddhistModel" src="./buddha.fbx"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -164,6 +170,8 @@
         let isLarge = false;
         let isTracking = false;
         let effectPlaying = false;
+        let animationPlaying = true; // FBX动画状态
+        let availableAnimations = []; // 可用动画列表
         
         // 检查必要的库是否加载
         if (typeof AFRAME === 'undefined') {
@@ -455,6 +463,10 @@
           const zoomButton = document.getElementById('zoomButton');
           zoomButton.addEventListener('click', toggleModelSize);
           
+          // 动画控制按钮
+          const animationButton = document.getElementById('animationButton');
+          animationButton.addEventListener('click', toggleAnimation);
+          
           // 特效重播按钮
           const effectButton = document.getElementById('effectButton');
           effectButton.addEventListener('click', function() {
@@ -502,34 +514,73 @@
           }, 500);
         }
         
-        // 模型缩放功能
-        function toggleModelSize() {
-          if (scene.style.display === 'none') {
-            debugInfo.innerHTML = '状态: 请先点击启动AR体验';
-            return;
-          }
-          
+        // FBX动画控制
+        function toggleAnimation() {
           const model = document.querySelector('#mainModel');
+          const animationButton = document.getElementById('animationButton');
+          
           if (!model || !model.getAttribute('visible')) {
             debugInfo.innerHTML = '状态: 请先扫描识别图';
             return;
           }
           
-          if (!isLarge) {
-            model.setAttribute('animation__scale', 'property: scale; to: 1.8 1.8 1.8; dur: 1500; easing: easeOutBack');
-            model.setAttribute('position', '0 0 0.4');
-            zoomButton.innerHTML = '🔍 缩小';
-            zoomButton.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
-            isLarge = true;
-            debugInfo.innerHTML = '状态: 佛像已放大✨';
-          } else {
-            model.setAttribute('animation__scale', 'property: scale; to: 0.8 0.8 0.8; dur: 1200; easing: easeInOutQuad');
-            model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate');
-            zoomButton.innerHTML = '🔍 放大';
-            zoomButton.style.background = 'linear-gradient(45deg, #ffd700, #ff8f00)';
-            isLarge = false;
-            debugInfo.innerHTML = '状态: 佛像已缩小';
+          const mixer = model.components['animation-mixer'];
+          if (!mixer) {
+            debugInfo.innerHTML = '状态: 动画组件未就绪';
+            return;
           }
+          
+          if (animationPlaying) {
+            // 暂停动画
+            model.setAttribute('animation-mixer', 'timeScale: 0');
+            animationButton.innerHTML = '▶️ 播放';
+            animationButton.style.background = 'linear-gradient(45deg, #ff9500, #ff5722)';
+            animationPlaying = false;
+            debugInfo.innerHTML = '状态: 动画已暂停';
+          } else {
+            // 恢复动画
+            model.setAttribute('animation-mixer', 'timeScale: 1');
+            animationButton.innerHTML = '⏸️ 暂停';
+            animationButton.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
+            animationPlaying = true;
+            debugInfo.innerHTML = '状态: 动画播放中';
+          }
+        }
+        
+        // 检测和设置FBX动画
+        function setupFBXAnimations() {
+          const model = document.querySelector('#mainModel');
+          
+          // 监听模型加载完成
+          model.addEventListener('model-loaded', function() {
+            console.log('FBX模型加载完成');
+            debugInfo.innerHTML = '状态: FBX模型已加载✅';
+            
+            // 获取动画信息
+            const mixer = model.components['animation-mixer'];
+            if (mixer && mixer.mixer && mixer.mixer._actions) {
+              availableAnimations = Object.keys(mixer.mixer._actions);
+              console.log('可用动画:', availableAnimations);
+              
+              if (availableAnimations.length > 0) {
+                debugInfo.innerHTML = `状态: 发现${availableAnimations.length}个动画`;
+                
+                // 自动播放第一个动画
+                model.setAttribute('animation-mixer', {
+                  clip: availableAnimations[0],
+                  loop: 'repeat',
+                  timeScale: 1
+                });
+              } else {
+                debugInfo.innerHTML = '状态: 未发现内置动画';
+              }
+            }
+          });
+          
+          model.addEventListener('model-error', function(event) {
+            console.error('FBX模型加载失败:', event.detail);
+            debugInfo.innerHTML = '错误: FBX模型加载失败';
+          });
         }
         
         // 工具函数
