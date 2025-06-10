@@ -2,7 +2,8 @@
         function sleep(ms) {
           return new Promise(resolve => setTimeout(resolve, ms));
         }
-      });<html>
+        
+      }); // 确保DOMContentLoaded事件监听器正确闭合<html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -265,7 +266,7 @@
             startScreen.style.display = 'flex';
             scene.style.display = 'none';
           }
-        });
+        }); // startButton click event 结束
         
         // 设置事件监听器
         function setupEventListeners() {
@@ -604,37 +605,44 @@
           if (typeof AFRAME.components['fbx-model'] !== 'undefined') {
             // 使用FBX模型
             debugInfo.innerHTML = '状态: 加载FBX模型...';
-            model.setAttribute('fbx-model', 'src: #buddhistModel');
-            model.setAttribute('animation-mixer', 'clip: *; loop: repeat; repetitions: Infinity');
             
-            // 监听FBX模型加载
-            model.addEventListener('model-loaded', function() {
-              console.log('FBX模型加载完成');
-              debugInfo.innerHTML = '状态: FBX模型已加载✅';
+            try {
+              model.setAttribute('fbx-model', 'src: #buddhistModel');
+              model.setAttribute('animation-mixer', 'clip: *; loop: repeat; repetitions: Infinity');
               
-              // 获取动画信息
-              const mixer = model.components['animation-mixer'];
-              if (mixer && mixer.mixer && mixer.mixer._actions) {
-                availableAnimations = Object.keys(mixer.mixer._actions);
-                console.log('可用动画:', availableAnimations);
+              // 监听FBX模型加载
+              model.addEventListener('model-loaded', function() {
+                console.log('FBX模型加载完成');
+                debugInfo.innerHTML = '状态: FBX模型已加载✅';
                 
-                if (availableAnimations.length > 0) {
-                  debugInfo.innerHTML = `状态: 发现${availableAnimations.length}个动画`;
-                } else {
-                  debugInfo.innerHTML = '状态: 未发现内置动画';
+                // 获取动画信息
+                const mixer = model.components['animation-mixer'];
+                if (mixer && mixer.mixer && mixer.mixer._actions) {
+                  availableAnimations = Object.keys(mixer.mixer._actions);
+                  console.log('可用动画:', availableAnimations);
+                  
+                  if (availableAnimations.length > 0) {
+                    debugInfo.innerHTML = `状态: 发现${availableAnimations.length}个动画`;
+                  } else {
+                    debugInfo.innerHTML = '状态: 未发现内置动画';
+                  }
                 }
-              }
-            });
-            
-            model.addEventListener('model-error', function(event) {
-              console.error('FBX模型加载失败:', event.detail);
-              debugInfo.innerHTML = '错误: FBX模型加载失败，尝试备选方案';
+              });
+              
+              model.addEventListener('model-error', function(event) {
+                console.error('FBX模型加载失败:', event.detail);
+                debugInfo.innerHTML = '状态: FBX加载失败，尝试GLB备选方案';
+                fallbackToGLTF();
+              });
+              
+            } catch (error) {
+              console.error('FBX设置失败:', error);
               fallbackToGLTF();
-            });
+            }
             
           } else {
             // 备选方案：尝试GLTF
-            debugInfo.innerHTML = '状态: FBX不可用，使用GLB模型';
+            debugInfo.innerHTML = '状态: FBX组件不可用，使用GLB模型';
             fallbackToGLTF();
           }
         }
@@ -643,19 +651,48 @@
         function fallbackToGLTF() {
           const model = document.querySelector('#mainModel');
           
-          // 尝试使用.glb文件
-          model.setAttribute('gltf-model', 'src: ./buddhist.glb');
-          debugInfo.innerHTML = '状态: 加载GLB模型...';
+          try {
+            // 尝试使用.glb文件
+            model.setAttribute('gltf-model', 'src: #buddhistBackup');
+            debugInfo.innerHTML = '状态: 加载GLB备用模型...';
+            
+            model.addEventListener('model-loaded', function() {
+              console.log('GLB模型加载完成');
+              debugInfo.innerHTML = '状态: GLB模型已加载✅';
+            });
+            
+            model.addEventListener('model-error', function(event) {
+              console.error('GLB模型也加载失败:', event.detail);
+              debugInfo.innerHTML = '状态: 模型文件未找到<br>请确保buddha.fbx或buddhist.glb存在';
+              
+              // 最后备选：使用简单几何体
+              createFallbackModel();
+            });
+            
+          } catch (error) {
+            console.error('GLB设置失败:', error);
+            createFallbackModel();
+          }
+        }
+        
+        // 最终备选：创建简单几何体代替模型
+        function createFallbackModel() {
+          const model = document.querySelector('#mainModel');
+          debugInfo.innerHTML = '状态: 使用几何体代替模型';
           
-          model.addEventListener('model-loaded', function() {
-            console.log('GLB模型加载完成');
-            debugInfo.innerHTML = '状态: GLB模型已加载✅';
-          });
+          // 清除之前的属性
+          model.removeAttribute('fbx-model');
+          model.removeAttribute('gltf-model');
+          model.removeAttribute('animation-mixer');
           
-          model.addEventListener('model-error', function(event) {
-            console.error('GLB模型也加载失败:', event.detail);
-            debugInfo.innerHTML = '错误: 模型文件未找到';
-          });
+          // 创建简单的佛像代替几何体
+          model.innerHTML = `
+            <a-cylinder position="0 0 0" radius="0.3" height="0.6" color="#D4AF37" opacity="0.8"></a-cylinder>
+            <a-sphere position="0 0.4 0" radius="0.2" color="#F5DEB3"></a-sphere>
+            <a-text value="佛" position="0 0 0.31" align="center" color="#8B4513" scale="2 2 2"></a-text>
+          `;
+          
+          console.log('已创建几何体代替模型');
         }
         
         // 重置并重播特效 - 优化版
