@@ -3,16 +3,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- A-Frame Extras - 支持FBX模型和动画 -->
-    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
     <div id="startScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; font-family: Arial, sans-serif;">
       <div style="text-align: center; color: white;">
-        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🧘 佛像 AR</h1>
-        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验神圣显现的增强现实佛像</p>
-        <p style="font-size: 1em; margin-bottom: 20px; opacity: 0.8;">✨ 扫描识别图体验神圣的佛光显现特效</p>
+        <h1 style="font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏯 千佛洞 AR</h1>
+        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.9;">体验增强现实中的3D佛像</p>
         <button id="startButton" style="
           background: #fff; 
           color: #667eea; 
@@ -24,38 +21,10 @@
           box-shadow: 0 4px 15px rgba(0,0,0,0.2);
           transition: transform 0.2s;
         " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-          🎯 开始神圣体验
+          🎯 开始 AR 体验
         </button>
         <p style="font-size: 0.9em; margin-top: 20px; opacity: 0.7;">请确保您已允许摄像头权限</p>
       </div>
-    </div>
-
-    <!-- 提示文字 -->
-    <div id="instruction" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px; font-family: Arial, sans-serif; display: none; z-index: 9999; font-size: 14px;">
-      👆 点击下方按钮可以放大佛像
-    </div>
-
-    <!-- 右下角按钮组 -->
-    <div style="position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 9999;">
-      <!-- 放大按钮 -->
-      <div id="zoomButton" style="background: linear-gradient(45deg, #ffd700, #ff8f00); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(255,215,0,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
-        🔍 放大
-      </div>
-
-      <!-- 动画控制按钮 -->
-      <div id="animationButton" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(78,205,196,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
-        🧘 动画
-      </div>
-
-      <!-- 特效控制按钮 -->
-      <div id="effectButton" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; border: none; padding: 12px 18px; border-radius: 20px; font-family: Arial, sans-serif; font-weight: bold; display: block; font-size: 14px; box-shadow: 0 4px 15px rgba(255,107,107,0.3); cursor: pointer; user-select: none; text-align: center; min-width: 90px;">
-        ✨ 重播
-      </div>
-    </div>
-
-    <!-- 调试信息 -->
-    <div id="debugInfo" style="position: fixed; top: 80px; left: 20px; color: white; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; font-family: monospace, sans-serif; display: block; z-index: 9999; font-size: 12px;">
-      状态: 等待启动
     </div>
 
     <a-scene mindar-image="imageTargetSrc: ./qianfo.mind" 
@@ -66,96 +35,51 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- 佛像FBX模型 - 支持动画 -->
-        <a-asset-item id="buddhistModel" src="./buddha.fbx"></a-asset-item>
+        <!-- 3D模型资源 -->
+        <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/softmind/buddha.fbx"></a-asset-item>
+        
+        <!-- 备用模型资源 -->
+        <a-asset-item id="avatarModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/softmind/scene.gltf"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
-      <a-entity mindar-image-target="targetIndex: 0" id="mainTarget">
-        
-        <!-- 显现特效粒子系统 - 简化配置 -->
-        <a-entity id="manifestationParticles" 
-                  position="0 0 0.1"
-                  particle-system="preset: dust; particleCount: 100; maxAge: 2; color: #FFD700,#FFA500; size: 0.3,0.05; velocity: 0 1 0; accelerationValue: 0 -0.5 0"
-                  visible="false">
-        </a-entity>
-
-        <!-- 佛光粒子系统 - 简化配置 -->
-        <a-entity id="divineLight" 
-                  position="0 2 0"
-                  particle-system="preset: default; particleCount: 150; maxAge: 3; color: #FFFFFF,#FFD700; size: 0.5,0.1; velocity: 0 -2 0; accelerationValue: 0 0.3 0; opacity: 0.8,0.2"
-                  visible="false">
-        </a-entity>
-
-        <!-- 环绕光粒子 - 简化配置 -->
-        <a-entity id="ambientParticles" 
-                  position="0 0 0.2"
-                  particle-system="preset: default; particleCount: 50; maxAge: 6; color: #FFD700,#FFECB3; size: 0.2,0.05; velocity: 0 0.3 0; opacity: 0.6,0.1"
-                  visible="false"
-                  animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
-        </a-entity>
-
-        <!-- 佛像3D模型 - 初始为黑白无材质 -->
+      <a-entity mindar-image-target="targetIndex: 0">
+        <!-- 主要3D模型 - 悬浮在识别图上方 -->
         <a-gltf-model 
           id="mainModel"
           rotation="0 0 0" 
-          position="0 0 0.1" 
-          scale="0.8 0.8 0.8" 
-          src="#buddhistModel"
-          visible="false">
+          position="0 0 0.3" 
+          scale="0.008 0.008 0.008" 
+          src="#buddhaModel" 
+          animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
         </a-gltf-model>
         
-        <!-- 神圣光束 - 从天而降 -->
-        <a-cylinder id="divineBeam"
-                    position="0 3 0"
-                    radius="0.3"
-                    height="6"
-                    color="#FFFFFF"
-                    opacity="0"
-                    material="transparent: true; shader: standard; metalness: 0.1; roughness: 0.1"
-                    visible="false">
-        </a-cylinder>
-
-        <!-- 光环效果 -->
-        <a-ring id="halo"
-                position="0 0.5 0"
-                radius-inner="0.4"
-                radius-outer="0.6"
-                color="#FFD700"
-                opacity="0"
-                material="transparent: true; side: double"
-                visible="false"
-                animation="property: rotation; to: 0 0 360; dur: 10000; easing: linear; loop: true">
-        </a-ring>
-
-        <!-- 增强光效系统 -->
-        <a-entity id="lightRig">
-          <!-- 主佛光 -->
-          <a-light id="mainLight" type="point" position="0 0.3 0.3" color="#ffd700" intensity="0"></a-light>
-          <a-light id="spotLight" type="spot" position="0 0.5 0.5" color="#fff3e0" intensity="0" 
-                   angle="45" penumbra="0.2"></a-light>
-          
-          <!-- 神圣光束光源 -->
-          <a-light id="divineBeamLight" type="directional" position="0 3 0" color="#ffffff" intensity="0" target="#mainModel"></a-light>
-          
-          <!-- 多角度补光 -->
-          <a-light id="leftLight" type="point" position="1 0.5 0.5" color="#ffe082" intensity="0"></a-light>
-          <a-light id="rightLight" type="point" position="-1 0.5 0.5" color="#ffe082" intensity="0"></a-light>
-          <a-light id="bottomLight" type="point" position="0 -0.3 0.2" color="#fff8e1" intensity="0"></a-light>
-        </a-entity>
+        <!-- 辅助光效 -->
+        <a-light type="point" position="0 2 1" color="#ffffff" intensity="0.8"></a-light>
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
         
-        <!-- 环境光 -->
-        <a-light id="ambientLight" type="ambient" color="#2c2416" intensity="0.3"></a-light>
-        
-        <!-- 洞窟氛围 -->
-        <a-ring id="caveAura"
-                position="0 0 -0.5" 
-                radius-inner="0.8" 
-                radius-outer="0.82" 
-                color="#37474f" 
-                opacity="0.03">
+        <!-- 可选：添加粒子效果或环境装饰 -->
+        <a-ring 
+          position="0 -0.1 0" 
+          rotation="-90 0 0" 
+          radius-inner="0.3" 
+          radius-outer="0.5" 
+          color="#ffd700" 
+          opacity="0.3"
+          animation="property: rotation; to: -90 360 0; dur: 10000; easing: linear; loop: true">
         </a-ring>
+        
+        <!-- 发光效果圆盘 -->
+        <a-circle 
+          position="0 -0.05 0" 
+          rotation="-90 0 0" 
+          radius="0.4" 
+          color="#ffeb3b" 
+          opacity="0.2"
+          animation="property: scale; to: 1.2 1.2 1.2; dur: 1500; easing: easeInOutQuad; loop: true; dir: alternate">
+        </a-circle>
       </a-entity>
       
     </a-scene>
@@ -165,24 +89,61 @@
         const startScreen = document.getElementById('startScreen');
         const startButton = document.getElementById('startButton');
         const scene = document.querySelector('a-scene');
-        const debugInfo = document.getElementById('debugInfo');
         
-        let isLarge = false;
-        let isTracking = false;
-        let effectPlaying = false;
-        let animationPlaying = true; // FBX动画状态
-        let availableAnimations = []; // 可用动画列表
+        // 稳定系统参数
+        const stabilizer = {
+          positionHistory: [],
+          rotationHistory: [],
+          maxHistory: 5,
+          smoothFactor: 0.15,  // 更强的平滑
+          threshold: 0.02      // 位置变化阈值
+        };
         
-        // 检查必要的库是否加载
-        if (typeof AFRAME === 'undefined') {
-          debugInfo.innerHTML = '错误: A-Frame未加载';
-          console.error('A-Frame库未正确加载');
-        } else if (typeof MINDAR === 'undefined') {
-          debugInfo.innerHTML = '错误: MindAR未加载';
-          console.error('MindAR库未正确加载');
-        } else {
-          debugInfo.innerHTML = '状态: 库已加载，等待启动';
-          console.log('A-Frame和MindAR库已正确加载');
+        // 位置平滑函数
+        function smoothTransform(currentPos, currentRot) {
+          // 位置平滑
+          stabilizer.positionHistory.push(currentPos);
+          if (stabilizer.positionHistory.length > stabilizer.maxHistory) {
+            stabilizer.positionHistory.shift();
+          }
+          
+          // 旋转平滑
+          stabilizer.rotationHistory.push(currentRot);
+          if (stabilizer.rotationHistory.length > stabilizer.maxHistory) {
+            stabilizer.rotationHistory.shift();
+          }
+          
+          // 计算平均位置
+          const avgPos = { x: 0, y: 0, z: 0 };
+          stabilizer.positionHistory.forEach(pos => {
+            avgPos.x += pos.x;
+            avgPos.y += pos.y;
+            avgPos.z += pos.z;
+          });
+          
+          const posCount = stabilizer.positionHistory.length;
+          const smoothedPos = {
+            x: avgPos.x / posCount,
+            y: avgPos.y / posCount,
+            z: avgPos.z / posCount
+          };
+          
+          // 计算平均旋转
+          const avgRot = { x: 0, y: 0, z: 0 };
+          stabilizer.rotationHistory.forEach(rot => {
+            avgRot.x += rot.x;
+            avgRot.y += rot.y;
+            avgRot.z += rot.z;
+          });
+          
+          const rotCount = stabilizer.rotationHistory.length;
+          const smoothedRot = {
+            x: avgRot.x / rotCount,
+            y: avgRot.y / rotCount,
+            z: avgRot.z / rotCount
+          };
+          
+          return { position: smoothedPos, rotation: smoothedRot };
         }
         
         // 初始隐藏场景
@@ -191,401 +152,98 @@
         // 启动按钮点击事件
         startButton.addEventListener('click', async function() {
           try {
-            debugInfo.innerHTML = '状态: 正在启动AR...';
-            
-            // 先请求摄像头权限
-            try {
-              const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
-              });
-              console.log('摄像头权限获取成功');
-              // 立即停止流，让MindAR接管
-              stream.getTracks().forEach(track => track.stop());
-            } catch (error) {
-              console.error('摄像头权限获取失败:', error);
-              alert('需要摄像头权限才能使用AR功能，请允许并刷新页面重试');
-              return;
-            }
-            
             startScreen.style.display = 'none';
             scene.style.display = 'block';
             
-            debugInfo.innerHTML = '状态: 加载AR场景中...';
-            
-            // 等待场景完全加载 - 延长超时时间
-            await new Promise((resolve, reject) => {
-              let timeout = setTimeout(() => {
-                reject(new Error('场景加载超时（20秒）'));
-              }, 20000); // 延长到20秒超时
-              
-              let checkCount = 0;
-              const checkInterval = setInterval(() => {
-                checkCount++;
-                debugInfo.innerHTML = `状态: 检查场景加载... (${checkCount}秒)`;
-                
-                if (scene.hasLoaded) {
-                  clearTimeout(timeout);
-                  clearInterval(checkInterval);
-                  resolve();
-                } else if (checkCount >= 20) {
-                  clearTimeout(timeout);
-                  clearInterval(checkInterval);
-                  reject(new Error('场景组件加载超时'));
-                }
-              }, 1000);
-              
-              // 如果已经加载，立即resolve
+            await new Promise(resolve => {
               if (scene.hasLoaded) {
-                clearTimeout(timeout);
-                clearInterval(checkInterval);
                 resolve();
+              } else {
+                scene.addEventListener('loaded', resolve);
               }
             });
             
-            debugInfo.innerHTML = '状态: AR已启动，等待识别图';
-            console.log('AR 佛像场景已启动');
-            setupEventListeners();
+            console.log('AR 3D模型场景已启动');
+            
+            // 启动稳定系统
+            setupStabilization();
             
           } catch (error) {
             console.error('启动AR失败:', error);
-            debugInfo.innerHTML = '状态: 启动失败 - ' + error.message;
-            alert('启动AR失败: ' + error.message + '\n请刷新页面重试');
+            alert('启动AR失败，请检查摄像头权限并刷新页面重试');
             startScreen.style.display = 'flex';
             scene.style.display = 'none';
           }
         });
         
-        // 设置事件监听器
-        function setupEventListeners() {
+        // 设置稳定系统
+        function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
-          
-          if (!targetEntity) {
-            debugInfo.innerHTML = '错误: 无法找到识别目标元素';
-            console.error('无法找到mindar-image-target元素');
-            return;
-          }
-          
-          // MindAR系统事件
-          const arSystem = document.querySelector('a-scene').systems['mindar-image-system'];
-          if (arSystem) {
-            console.log('MindAR系统已找到');
-            debugInfo.innerHTML = '状态: MindAR已就绪，请扫描识别图';
-          } else {
-            console.warn('MindAR系统未找到');
-            debugInfo.innerHTML = '警告: MindAR系统未正确加载';
-          }
-          
-          // 目标检测事件
-          targetEntity.addEventListener('targetFound', function() {
-            console.log('识别目标找到 - 开始神圣显现序列');
-            isTracking = true;
-            debugInfo.innerHTML = '状态: 目标已识别✨<br>开始神圣显现...';
-            
-            if (!effectPlaying) {
-              startManifestationSequence();
-            }
-          });
-          
-          targetEntity.addEventListener('targetLost', function() {
-            console.log('识别目标丢失');
-            isTracking = false;
-            debugInfo.innerHTML = '状态: 目标丢失<br>请重新扫描识别图';
-          });
-          
-          // 按钮事件
-          setupButtons();
-          
-          // 添加场景错误监听
-          scene.addEventListener('error', function(event) {
-            console.error('场景错误:', event);
-            debugInfo.innerHTML = '错误: 场景加载失败';
-          });
-        }
-        
-        // 简化的神圣显现序列
-        async function startManifestationSequence() {
-          if (effectPlaying) return;
-          effectPlaying = true;
-          
           const model = document.querySelector('#mainModel');
-          const divineBeam = document.querySelector('#divineBeam');
-          const divineBeamCore = document.querySelector('#divineBeamCore');
-          const halo = document.querySelector('#halo');
           
-          try {
-            // 第1步：佛像渐显 (2秒)
-            debugInfo.innerHTML = '✨ 第1步: 佛像渐显';
-            model.setAttribute('visible', true);
-            model.setAttribute('material', 'opacity: 0; transparent: true');
-            model.setAttribute('animation__fadein', 'property: material.opacity; to: 1; dur: 2000; easing: easeOutQuad');
-            await sleep(2000);
+          if (targetEntity && model) {
+            let lastPosition = { x: 0, y: 0, z: 0 };
+            let lastRotation = { x: 0, y: 0, z: 0 };
+            let isTracking = false;
             
-            // 第2步：神圣光束效果 (2秒)
-            debugInfo.innerHTML = '🌟 第2步: 神圣光束';
-            if (divineBeam && divineBeamCore) {
-              await showDivineBeam(divineBeam, divineBeamCore);
-            }
-            
-            // 第3步：场景光辉增强 (1.5秒)
-            debugInfo.innerHTML = '💫 第3步: 光辉增强';
-            await enhanceSceneLighting();
-            
-            // 第4步：开始旋转效果
-            debugInfo.innerHTML = '🔄 第4步: 神圣旋转';
-            startRotationAndAmbience(model, halo);
-            
-            debugInfo.innerHTML = '✅ 神圣显现完成<br>🔍 可使用按钮互动';
-            effectPlaying = false;
-            
-          } catch (error) {
-            console.error('特效序列出错:', error);
-            debugInfo.innerHTML = '错误: 特效播放失败 - ' + error.message;
-            effectPlaying = false;
-          }
-        }
-        
-        // 设置模型材质
-        function setModelMaterial(model, properties) {
-          setTimeout(() => {
-            const mesh = model.getObject3D('mesh');
-            if (mesh) {
-              mesh.traverse(function(child) {
-                if (child.isMesh && child.material) {
-                  Object.assign(child.material, properties);
-                  child.material.needsUpdate = true;
-                }
-              });
-            }
-          }, 100);
-        }
-        
-        // 逐渐着色
-        async function gradualColorization(model) {
-          const steps = 20;
-          const duration = 2000;
-          const stepDuration = duration / steps;
-          
-          for (let i = 0; i <= steps; i++) {
-            const progress = i / steps;
-            const grayValue = 0.4 + (progress * 0.6); // 从深灰到正常
-            
-            setModelMaterial(model, {
-              color: `rgb(${Math.floor(grayValue * 255)}, ${Math.floor(grayValue * 200)}, ${Math.floor(grayValue * 150)})`,
-              metalness: 0.1 + (progress * 0.2),
-              roughness: 0.9 - (progress * 0.3),
-              opacity: 0.8 + (progress * 0.2)
+            // 目标检测事件
+            targetEntity.addEventListener('targetFound', function() {
+              console.log('识别目标找到 - 显示3D模型');
+              isTracking = true;
+              
+              // 重置历史记录，避免突然跳跃
+              stabilizer.positionHistory = [];
+              stabilizer.rotationHistory = [];
             });
             
-            await sleep(stepDuration);
-          }
-        }
-        
-        // 显示神圣光束 - 优化版
-        async function showDivineBeam(beam, beamCore) {
-          // 显示双层光束
-          beam.setAttribute('visible', true);
-          beamCore.setAttribute('visible', true);
-          
-          // 外层光束效果
-          beam.setAttribute('animation', 'property: opacity; to: 0.8; dur: 1500; easing: easeOutQuad');
-          beam.setAttribute('animation__descend', 'property: position; to: 0 0.5 0; dur: 2500; easing: easeOutBack');
-          beam.setAttribute('animation__pulse', 'property: material.emissiveIntensity; to: 0.6; from: 0.3; dur: 1000; easing: easeInOutSine; loop: true; dir: alternate');
-          
-          // 内核光束效果
-          beamCore.setAttribute('animation', 'property: opacity; to: 0.9; dur: 1500; easing: easeOutQuad');
-          beamCore.setAttribute('animation__descend', 'property: position; to: 0 0.5 0; dur: 2500; easing: easeOutBack');
-          beamCore.setAttribute('animation__pulse', 'property: material.emissiveIntensity; to: 1.2; from: 0.8; dur: 800; easing: easeInOutSine; loop: true; dir: alternate');
-          
-          // 光束光源逐渐增强
-          const beamLight = document.querySelector('#divineBeamLight');
-          if (beamLight) {
-            beamLight.setAttribute('animation', 'property: light.intensity; to: 4.0; dur: 2000; easing: easeInOutQuad');
-          }
-          
-          await sleep(3000);
-          
-          // 光束逐渐消失，但光源保持
-          beam.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 1500; easing: easeInQuad');
-          beamCore.setAttribute('animation__fadeout', 'property: opacity; to: 0; dur: 1500; easing: easeInQuad');
-          
-          setTimeout(() => {
-            beam.setAttribute('visible', false);
-            beamCore.setAttribute('visible', false);
-          }, 1500);
-        }
-        
-        // 增强场景光效
-        async function enhanceSceneLighting() {
-          const lights = {
-            mainLight: { intensity: 2.5 },
-            spotLight: { intensity: 2.0 },
-            leftLight: { intensity: 1.0 },
-            rightLight: { intensity: 1.0 },
-            bottomLight: { intensity: 0.8 }
-          };
-          
-          // 逐个点亮光源
-          for (const [lightId, props] of Object.entries(lights)) {
-            const light = document.querySelector(`#${lightId}`);
-            light.setAttribute('animation', `property: light.intensity; to: ${props.intensity}; dur: 800; easing: easeOutQuad`);
-            await sleep(200);
-          }
-          
-          // 增强环境光
-          const ambientLight = document.querySelector('#ambientLight');
-          ambientLight.setAttribute('animation', 'property: light.intensity; to: 0.8; dur: 1500; easing: easeOutQuad');
-          
-          await sleep(1500);
-        }
-        
-        // 开始旋转和光环特效 - 优化版
-        function startRotationAndAmbience(model, halo) {
-          // 模型开始悬浮和旋转（加快旋转速度）
-          model.setAttribute('animation', 'property: position; to: 0 0 0.15; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate');
-          model.setAttribute('animation__rotation', 'property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true');
-          
-          // 显示光环
-          if (halo) {
-            halo.setAttribute('visible', true);
-            halo.setAttribute('animation__appear', 'property: opacity; to: 0.6; dur: 2000; easing: easeOutQuad');
-          }
-          
-          // 光源跟随旋转（同样加快速度）
-          const lightRig = document.querySelector('#lightRig');
-          if (lightRig) {
-            lightRig.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: true');
-          }
-        }
-        
-        // 按钮功能设置
-        function setupButtons() {
-          // 缩放按钮
-          const zoomButton = document.getElementById('zoomButton');
-          zoomButton.addEventListener('click', toggleModelSize);
-          
-          // 动画控制按钮
-          const animationButton = document.getElementById('animationButton');
-          animationButton.addEventListener('click', toggleAnimation);
-          
-          // 特效重播按钮
-          const effectButton = document.getElementById('effectButton');
-          effectButton.addEventListener('click', function() {
-            if (isTracking && !effectPlaying) {
-              resetAndReplayEffect();
-            } else if (!isTracking) {
-              debugInfo.innerHTML = '⚠️ 请先扫描识别图';
-            } else {
-              debugInfo.innerHTML = '⏳ 特效播放中...';
-            }
-          });
-        }
-        
-        // 重置并重播特效 - 优化版
-        function resetAndReplayEffect() {
-          // 隐藏所有特效元素
-          const elements = ['#mainModel', '#divineBeam', '#divineBeamCore', '#halo'];
-          elements.forEach(selector => {
-            const el = document.querySelector(selector);
-            if (el) {
-              el.setAttribute('visible', false);
-              el.removeAttribute('animation');
-              el.removeAttribute('animation__appear');
-              el.removeAttribute('animation__descend');
-              el.removeAttribute('animation__fadeout');
-              el.removeAttribute('animation__rotation');
-              el.removeAttribute('animation__fadein');
-              el.removeAttribute('animation__pulse');
-            }
-          });
-          
-          // 重置光源
-          const lights = ['#mainLight', '#spotLight', '#divineBeamLight', '#leftLight', '#rightLight', '#bottomLight', '#ambientLight'];
-          lights.forEach(selector => {
-            const light = document.querySelector(selector);
-            if (light) {
-              light.setAttribute('light', 'intensity', 0);
-              light.removeAttribute('animation');
-            }
-          });
-          
-          // 重新开始序列
-          setTimeout(() => {
-            startManifestationSequence();
-          }, 500);
-        }
-        
-        // FBX动画控制
-        function toggleAnimation() {
-          const model = document.querySelector('#mainModel');
-          const animationButton = document.getElementById('animationButton');
-          
-          if (!model || !model.getAttribute('visible')) {
-            debugInfo.innerHTML = '状态: 请先扫描识别图';
-            return;
-          }
-          
-          const mixer = model.components['animation-mixer'];
-          if (!mixer) {
-            debugInfo.innerHTML = '状态: 动画组件未就绪';
-            return;
-          }
-          
-          if (animationPlaying) {
-            // 暂停动画
-            model.setAttribute('animation-mixer', 'timeScale: 0');
-            animationButton.innerHTML = '▶️ 播放';
-            animationButton.style.background = 'linear-gradient(45deg, #ff9500, #ff5722)';
-            animationPlaying = false;
-            debugInfo.innerHTML = '状态: 动画已暂停';
-          } else {
-            // 恢复动画
-            model.setAttribute('animation-mixer', 'timeScale: 1');
-            animationButton.innerHTML = '⏸️ 暂停';
-            animationButton.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
-            animationPlaying = true;
-            debugInfo.innerHTML = '状态: 动画播放中';
-          }
-        }
-        
-        // 检测和设置FBX动画
-        function setupFBXAnimations() {
-          const model = document.querySelector('#mainModel');
-          
-          // 监听模型加载完成
-          model.addEventListener('model-loaded', function() {
-            console.log('FBX模型加载完成');
-            debugInfo.innerHTML = '状态: FBX模型已加载✅';
+            targetEntity.addEventListener('targetLost', function() {
+              console.log('识别目标丢失 - 隐藏3D模型');
+              isTracking = false;
+            });
             
-            // 获取动画信息
-            const mixer = model.components['animation-mixer'];
-            if (mixer && mixer.mixer && mixer.mixer._actions) {
-              availableAnimations = Object.keys(mixer.mixer._actions);
-              console.log('可用动画:', availableAnimations);
-              
-              if (availableAnimations.length > 0) {
-                debugInfo.innerHTML = `状态: 发现${availableAnimations.length}个动画`;
+            // 实时稳定更新
+            setInterval(() => {
+              if (isTracking) {
+                const currentPos = targetEntity.getAttribute('position') || lastPosition;
+                const currentRot = targetEntity.getAttribute('rotation') || lastRotation;
                 
-                // 自动播放第一个动画
-                model.setAttribute('animation-mixer', {
-                  clip: availableAnimations[0],
-                  loop: 'repeat',
-                  timeScale: 1
-                });
-              } else {
-                debugInfo.innerHTML = '状态: 未发现内置动画';
+                // 检查变化是否足够大
+                const positionDiff = Math.sqrt(
+                  Math.pow(currentPos.x - lastPosition.x, 2) +
+                  Math.pow(currentPos.y - lastPosition.y, 2) +
+                  Math.pow(currentPos.z - lastPosition.z, 2)
+                );
+                
+                if (positionDiff > stabilizer.threshold) {
+                  const smoothed = smoothTransform(currentPos, currentRot);
+                  
+                  // 应用平滑后的变换
+                  lastPosition = smoothed.position;
+                  lastRotation = smoothed.rotation;
+                  
+                  // 更新模型位置（保持相对偏移）
+                  model.setAttribute('position', {
+                    x: smoothed.position.x,
+                    y: smoothed.position.y,
+                    z: smoothed.position.z + 0.3  // 保持在识别图上方
+                  });
+                }
               }
-            }
+            }, 16); // 约60fps
+          }
+        }
+        
+        // 监听模型加载状态
+        const model = document.querySelector('#mainModel');
+        
+        if (model) {
+          model.addEventListener('model-loaded', function() {
+            console.log('3D模型加载完成');
           });
           
           model.addEventListener('model-error', function(event) {
-            console.error('FBX模型加载失败:', event.detail);
-            debugInfo.innerHTML = '错误: FBX模型加载失败';
+            console.error('3D模型加载失败:', event.detail);
           });
-        }
-        
-        // 工具函数
-        function sleep(ms) {
-          return new Promise(resolve => setTimeout(resolve, ms));
         }
       });
     </script>
