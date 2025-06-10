@@ -3,9 +3,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <!-- 更可靠的FBX支持 -->
-    <script src="https://threejs.org/examples/js/loaders/FBXLoader.js"></script>
-    <script src="https://threejs.org/examples/js/libs/fflate.min.js"></script>
   </head>
   <body>
     <!-- 启动界面 -->
@@ -38,36 +35,20 @@
              loading-screen="enabled: false">
       
       <a-assets>
-        <!-- FBX模型资源 - 使用JSDelivr CDN避免CORS问题 -->
+        <!-- FBX模型资源 -->
         <a-asset-item id="buddhaModel" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddha.fbx"></a-asset-item>
-        
-        <!-- 备用GLB模型 -->
-        <a-asset-item id="buddhaModelGLB" src="https://cdn.jsdelivr.net/gh/ARplus/AR-SLAM-3D@main/buddhist.glb"></a-asset-item>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       
       <a-entity mindar-image-target="targetIndex: 0">
-        <!-- 主要3D模型 - 先尝试GLB，失败后使用FBX -->
-        <a-gltf-model 
-          id="mainModel"
-          rotation="0 0 0" 
-          position="0 0 0.3" 
-          scale="0.008 0.008 0.008" 
-          src="#buddhaModelGLB"
-          visible="true"
-          animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
-          animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
-        </a-gltf-model>
-        
-        <!-- FBX备用模型 -->
+        <!-- FBX模型容器 -->
         <a-entity 
-          id="mainModelFBX"
-          fbx-model-custom="src: #buddhaModel" 
+          id="mainModel"
+          fbx-model-loader
           rotation="0 0 0" 
           position="0 0 0.3" 
           scale="0.008 0.008 0.008" 
-          visible="false"
           animation="property: position; to: 0 0 0.4; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"
           animation__rotation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
         </a-entity>
@@ -101,34 +82,113 @@
     </a-scene>
 
     <script>
-      // 注册自定义FBX组件（备用方案）
-      AFRAME.registerComponent('fbx-model-custom', {
+      // 专门的FBX加载器组件
+      AFRAME.registerComponent('fbx-model-loader', {
         schema: {
-          src: {type: 'string'}
+          src: {type: 'string', default: '#buddhaModel'}
         },
         
         init: function () {
           this.model = null;
-          this.loader = new THREE.FBXLoader();
+          this.loadFBXModel();
         },
         
-        update: function () {
-          const data = this.data;
+        loadFBXModel: function() {
           const el = this.el;
+          const data = this.data;
           
-          if (!data.src) return;
-          
-          this.remove();
-          this.loader.load(data.src, (fbx) => {
-            this.model = fbx;
-            el.setObject3D('mesh', fbx);
-            el.emit('model-loaded', {format: 'fbx', model: fbx});
-          }, (progress) => {
-            console.log('FBX加载进度:', (progress.loaded / progress.total * 100) + '%');
-          }, (error) => {
-            console.error('FBX加载失败:', error);
-            el.emit('model-error', {format: 'fbx', src: data.src});
+          // 动态加载FBX加载器
+          if (!window.THREE || !window.THREE.FBXLoader) {
+            this.loadFBXLoader().then(() => {
+              this.loadModel();
+            });
+          } else {
+            this.loadModel();
+          }
+        },
+        
+        loadFBXLoader: function() {
+          return new Promise((resolve, reject) => {
+            // 加载FBX Loader
+            const script = document.createElement('script');
+            script.src = 'https://threejs.org/examples/js/loaders/FBXLoader.js';
+            script.onload = () => {
+              console.log('FBX Loader 已加载');
+              resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
           });
+        },
+        
+        loadModel: function() {
+          const el = this.el;
+          const assetItem = document.querySelector(this.data.src);
+          
+          if (!assetItem) {
+            console.error('找不到FBX资源:', this.data.src);
+            return;
+          }
+          
+          const fbxUrl = assetItem.getAttribute('src');
+          console.log('开始加载FBX模型:', fbxUrl);
+          
+          // 创建FBX加载器
+          const loader = new THREE.FBXLoader();
+          
+          loader.load(
+            fbxUrl,
+            (fbx) => {
+              console.log('FBX模型加载成功');
+              
+              // 处理模型材质和纹理
+              fbx.traverse((child) => {
+                if (child.isMesh) {
+                  child.castShadow = true;
+                  child.receiveShadow = true;
+                  
+                  // 确保材质兼容
+                  if (child.material) {
+                    if (Array.isArray(child.material)) {
+                      child.material.forEach(mat => {
+                        mat.needsUpdate = true;
+                      });
+                    } else {
+                      child.material.needsUpdate = true;
+                    }
+                  }
+                }
+              });
+              
+              // 添加到场景
+              this.model = fbx;
+              el.setObject3D('mesh', fbx);
+              
+              // 触发加载完成事件
+              el.emit('model-loaded', {format: 'fbx', model: fbx});
+              console.log('FBX模型已添加到场景');
+            },
+            (progress) => {
+              const percent = (progress.loaded / progress.total * 100);
+              console.log('FBX加载进度:', percent.toFixed(1) + '%');
+            },
+            (error) => {
+              console.error('FBX加载失败:', error);
+              el.emit('model-error', {format: 'fbx', error: error});
+              
+              // 显示占位符
+              this.showPlaceholder();
+            }
+          );
+        },
+        
+        showPlaceholder: function() {
+          console.log('显示占位符几何体');
+          const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+          const material = new THREE.MeshBasicMaterial({color: 0xff6b6b});
+          const cube = new THREE.Mesh(geometry, material);
+          
+          this.el.setObject3D('mesh', cube);
         },
         
         remove: function () {
@@ -212,7 +272,7 @@
               }
             });
             
-            console.log('AR FBX模型场景已启动');
+            console.log('AR FBX场景已启动');
             setupStabilization();
             
           } catch (error) {
@@ -227,22 +287,21 @@
         function setupStabilization() {
           const targetEntity = document.querySelector('[mindar-image-target]');
           const model = document.querySelector('#mainModel');
-          const modelFBX = document.querySelector('#mainModelFBX');
           
-          if (targetEntity && (model || modelFBX)) {
+          if (targetEntity && model) {
             let lastPosition = { x: 0, y: 0, z: 0 };
             let lastRotation = { x: 0, y: 0, z: 0 };
             let isTracking = false;
             
             targetEntity.addEventListener('targetFound', function() {
-              console.log('识别目标找到 - 显示3D模型');
+              console.log('识别目标找到 - 显示FBX模型');
               isTracking = true;
               stabilizer.positionHistory = [];
               stabilizer.rotationHistory = [];
             });
             
             targetEntity.addEventListener('targetLost', function() {
-              console.log('识别目标丢失 - 隐藏3D模型');
+              console.log('识别目标丢失 - 隐藏FBX模型');
               isTracking = false;
             });
             
@@ -263,64 +322,35 @@
                   lastPosition = smoothed.position;
                   lastRotation = smoothed.rotation;
                   
-                  // 更新当前可见的模型
-                  const activeModel = model.getAttribute('visible') ? model : modelFBX;
-                  if (activeModel) {
-                    activeModel.setAttribute('position', {
-                      x: smoothed.position.x,
-                      y: smoothed.position.y,
-                      z: smoothed.position.z + 0.3
-                    });
-                  }
+                  model.setAttribute('position', {
+                    x: smoothed.position.x,
+                    y: smoothed.position.y,
+                    z: smoothed.position.z + 0.3
+                  });
                 }
               }
             }, 16);
           }
         }
         
-        // 监听模型加载状态
+        // 监听FBX模型加载状态
         const model = document.querySelector('#mainModel');
-        const modelFBX = document.querySelector('#mainModelFBX');
-        let modelLoaded = false;
         
         if (model) {
-          model.addEventListener('model-loaded', function() {
-            console.log('GLB模型加载完成');
-            modelLoaded = true;
+          model.addEventListener('model-loaded', function(event) {
+            console.log('FBX模型加载完成，可以添加动画和粒子效果了');
+            const fbxModel = event.detail.model;
+            
+            // 这里可以添加你的动画逻辑
+            // fbxModel.animations 包含FBX的动画数据
+            if (fbxModel.animations && fbxModel.animations.length > 0) {
+              console.log('找到', fbxModel.animations.length, '个动画');
+              // 可以在这里设置动画混合器等
+            }
           });
           
           model.addEventListener('model-error', function(event) {
-            console.error('GLB模型加载失败，尝试FBX模型:', event.detail);
-            
-            // 隐藏GLB模型，显示FBX模型
-            model.setAttribute('visible', 'false');
-            if (modelFBX) {
-              modelFBX.setAttribute('visible', 'true');
-              console.log('切换到FBX模型');
-            }
-          });
-        }
-        
-        if (modelFBX) {
-          modelFBX.addEventListener('model-loaded', function() {
-            console.log('FBX模型加载完成');
-            modelLoaded = true;
-          });
-          
-          modelFBX.addEventListener('model-error', function(event) {
-            console.error('FBX模型也加载失败:', event.detail);
-            
-            // 如果都失败了，显示一个简单的几何体作为占位符
-            const targetEntity = document.querySelector('[mindar-image-target]');
-            if (targetEntity) {
-              const placeholder = document.createElement('a-box');
-              placeholder.setAttribute('position', '0 0 0.3');
-              placeholder.setAttribute('scale', '0.2 0.2 0.2');
-              placeholder.setAttribute('color', '#ff6b6b');
-              placeholder.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 3000; loop: true');
-              targetEntity.appendChild(placeholder);
-              console.log('显示占位符几何体');
-            }
+            console.error('FBX模型加载失败:', event.detail);
           });
         }
       });
